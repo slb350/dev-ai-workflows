@@ -1,0 +1,587 @@
+# Python Development Workflow - TDD Best Practices
+
+**Version:** 1.0  
+**Last Updated:** 2025-10-17  
+**Purpose:** Stellar workflow for Python development with comprehensive test coverage
+
+---
+
+## Overview
+
+This workflow prioritizes **quality**, **maintainability**, and **confidence** through rigorous Test-Driven Development (TDD). Every feature is built with tests first, ensuring correctness from the start.
+
+---
+
+## Core Principles
+
+1. **Tests First, Always** - No production code without failing tests
+2. **One Task at a Time** - Complete each section fully before moving on
+3. **Immediate Feedback** - Run tests after every change
+4. **Clean Code** - Format and lint after each component
+5. **Clear History** - Commit after each completed section
+6. **Track Everything** - Keep a visible task tracker (TodoWrite, Linear, checklist, etc.)
+
+---
+
+## The Workflow (Red-Green-Refactor-Commit)
+
+### Phase 1: Planning & Setup
+
+```bash
+# 1. Create/activate virtual environment
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
+# Windows (PowerShell): .\venv\Scripts\Activate.ps1
+
+# 2. Install dependencies declared in pyproject.toml
+# Ensure dev tooling lives under [project.optional-dependencies].dev
+pip install -e ".[dev]"
+
+# 3. Verify environment
+python -c "import your_package"
+# Optional: python -c "import importlib.metadata as md; print(md.version('your-package'))"
+```
+
+Note: Keep development tooling listed under `[project.optional-dependencies].dev` in `pyproject.toml` so `pip install -e ".[dev]"` stays the single source of truth. This workflow standardizes on `pip` for managing editable installs and extras.
+
+**Create Todo List:**
+```python
+# Track todos in your preferred tool (TodoWrite, Linear, checklist, etc.):
+# - All major sections/features to implement
+# - Sub-tasks for complex features
+# - Format, test, commit, and docs tasks at end
+```
+
+### Phase 2: TDD Cycle (For Each Feature/Section)
+
+#### Step 1: RED - Write Failing Tests
+
+```python
+# Create test file: tests/unit/test_[feature].py
+import pytest
+from your_package import FeatureClass
+
+def test_feature_basic_functionality():
+    """Test that feature works as expected."""
+    obj = FeatureClass()
+    result = obj.method()
+    
+    assert result == expected_value
+    assert obj.state == expected_state
+
+def test_feature_edge_case():
+    """Test edge cases and error handling."""
+    obj = FeatureClass()
+    
+    with pytest.raises(ValueError):
+        obj.method(invalid_input)
+
+# Add tests for:
+# - Basic functionality (happy path)
+# - Edge cases
+# - Error handling
+# - Integration with other components
+```
+
+**Run tests to verify they fail:**
+```bash
+pytest tests/unit/test_[feature].py::test_feature_basic_functionality -v
+# Should see: FAILED (expected, since code doesn't exist yet)
+```
+
+#### Step 2: GREEN - Implement Minimum Code
+
+```python
+# Create implementation: your_package/[feature].py
+class FeatureClass:
+    """Clear docstring describing purpose."""
+    
+    def __init__(self, param: Type):
+        """Initialize with required parameters.
+        
+        Args:
+            param: Description of parameter
+        """
+        self.param = param
+    
+    def method(self) -> ReturnType:
+        """Do the thing.
+        
+        Returns:
+            Description of return value
+            
+        Raises:
+            ValueError: When input is invalid
+        """
+        # Implement just enough to pass tests
+        if invalid_condition:
+            raise ValueError("Clear error message")
+        
+        return computed_result
+```
+
+**Run tests to verify they pass:**
+```bash
+pytest tests/unit/test_[feature].py -v
+# Should see: X passed
+```
+
+#### Step 3: REFACTOR - Clean & Format
+
+```bash
+# Lint and auto-fix (run before formatting so import fixes stick)
+ruff check your_package/ tests/ --fix
+
+# Format code
+black your_package/ tests/
+
+# Verify tests still pass after refactoring
+pytest tests/unit/test_[feature].py -v
+```
+
+**Update todo:**
+```python
+# Mark current task as completed
+# Mark next task as in_progress
+# Update your chosen tracker (TodoWrite, Linear, checklist, etc.)
+```
+
+#### Step 4: COMMIT - Save Progress
+
+```bash
+# Stage changes
+git add -A
+
+# Commit with descriptive message
+git commit -m "feat: Implement [feature] with [X] tests
+
+Implemented [FeatureClass] with comprehensive test coverage:
+- [Specific functionality 1]
+- [Specific functionality 2]
+- [Edge case handling]
+
+Testing:
+- X new tests covering [scenarios]
+- All tests passing (total: Y tests)
+
+[Any important notes or decisions]
+"
+
+# Push to remote
+git push
+```
+
+---
+
+## Testing Guidelines
+
+### Test Structure
+
+```python
+"""Unit tests for [Component] (Phase X.Y)."""
+
+import pytest
+from your_package import Component
+
+
+def test_[component]_[specific_behavior]():
+    """Test that [component] [does specific thing]."""
+    # Arrange
+    component = Component(config)
+    input_data = create_test_data()
+    
+    # Act
+    result = component.method(input_data)
+    
+    # Assert
+    assert result.property == expected_value
+    assert len(result.items) == expected_count
+
+
+@pytest.mark.asyncio
+async def test_[component]_async_behavior():
+    """Test async functionality."""
+    component = Component()
+    
+    result = await component.async_method()
+    
+    assert result is not None
+```
+
+### Test Coverage Checklist
+
+For each component, test:
+- ✅ **Happy path** - Normal usage works correctly
+- ✅ **Edge cases** - Empty inputs, boundary values, special cases
+- ✅ **Error handling** - Invalid inputs raise appropriate exceptions
+- ✅ **Integration** - Works correctly with other components
+- ✅ **State management** - Object state is correct after operations
+- ✅ **Async behavior** - Async functions work correctly (if applicable)
+
+### Test Naming Convention
+
+```
+test_[component]_[behavior]_[condition]
+```
+
+Examples:
+- `test_parser_finds_typo()`
+- `test_parser_ignores_urls()`
+- `test_parser_handles_empty_input()`
+- `test_analyzer_routes_to_markdown()`
+
+---
+
+## Commit Message Format
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+type(scope): Brief description (max 72 chars)
+
+Detailed explanation of what and why:
+- Bullet point 1
+- Bullet point 2
+- Bullet point 3
+
+Testing:
+- X tests added
+- All Y tests passing
+
+[Optional additional context]
+```
+
+### Commit Types
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation only
+- `test:` - Test-only changes
+- `refactor:` - Code restructuring (no behavior change)
+- `chore:` - Maintenance tasks
+
+### Examples
+
+```bash
+# Feature implementation
+git commit -m "feat: Implement spellcheck layer with context awareness
+
+Implemented SpellcheckLayer with comprehensive filtering:
+- URL filtering (ignores https://example.com)
+- Inline code filtering (ignores \`backticks\`)
+- Identifier filtering (ignores camelCase, snake_case, numbers)
+- Custom dictionary support
+
+Testing:
+- 7 new tests covering all edge cases
+- All 21 tests passing
+
+Phase 3.2 complete."
+
+# Bug fix
+git commit -m "fix: Handle AST nodes without docstrings
+
+ISSUE: ast.get_docstring() raises TypeError for nodes that
+can't have docstrings (e.g., ast.arguments).
+
+FIX:
+- Check isinstance() before calling get_docstring()
+- Only process FunctionDef, AsyncFunctionDef, ClassDef, Module
+
+Testing:
+- Updated 4 tests to verify fix
+- All 18 tests passing"
+
+# Documentation update
+git commit -m "docs: Update implementation-plan.md - mark Phase 3 complete
+
+Updated implementation plan to reflect completion:
+- Document version 1.2 → 1.3
+- Status: Phase 1, 2 & 3 Complete
+- Marked all Phase 3 sections as complete (✅)
+- Total: 109 tests passing"
+```
+
+---
+
+## Code Quality Standards
+
+### Formatting
+
+```bash
+# Always run before committing
+ruff check your_package/ tests/ --fix
+black your_package/ tests/
+```
+
+### Type Hints
+
+```python
+from typing import List, Optional, Dict
+
+def method(
+    param1: str,
+    param2: Optional[int] = None
+) -> List[Dict[str, str]]:
+    """Always include type hints for parameters and return values."""
+    pass
+```
+
+### Docstrings
+
+```python
+def method(param1: str, param2: int = 0) -> bool:
+    """Brief one-line summary.
+    
+    Detailed explanation of what the method does, when to use it,
+    and any important context.
+    
+    Args:
+        param1: Description of param1
+        param2: Description of param2 (default: 0)
+        
+    Returns:
+        Description of return value
+        
+    Raises:
+        ValueError: When param1 is empty
+        TypeError: When param2 is negative
+        
+    Example:
+        >>> method("test", 5)
+        True
+    """
+    pass
+```
+
+---
+
+## Project Structure Best Practices
+
+```
+your_package/
+├── __init__.py
+├── models/              # Data models (Pydantic, SQLAlchemy)
+│   ├── __init__.py
+│   ├── config.py
+│   └── findings.py
+├── adapters/            # External integrations
+│   ├── __init__.py
+│   └── gitea.py
+├── core/                # Business logic
+│   ├── __init__.py
+│   └── scanner.py
+└── documentation/       # Feature modules
+    ├── __init__.py
+    ├── spellcheck.py
+    ├── patterns.py
+    └── analyzer.py
+
+tests/
+├── __init__.py
+├── unit/                # Unit tests (fast, isolated)
+│   ├── __init__.py
+│   ├── test_config_models.py
+│   ├── test_spellcheck.py
+│   └── test_patterns.py
+└── integration/         # Integration tests (slower, full stack)
+    ├── __init__.py
+    └── test_full_scan.py
+```
+
+---
+
+## Full Session Checklist
+
+**Before Starting:**
+- [ ] Virtual environment activated
+- [ ] Dependencies installed
+- [ ] Environment verified (imports work)
+- [ ] Todo list created with all tasks
+
+**For Each Feature:**
+- [ ] Write failing tests (RED)
+- [ ] Verify tests fail
+- [ ] Implement minimum code (GREEN)
+- [ ] Verify tests pass
+- [ ] Format and lint (REFACTOR)
+- [ ] Update todo (mark complete, next in_progress)
+- [ ] Commit with descriptive message (COMMIT)
+
+**After Each Phase:**
+- [ ] Run full test suite: `pytest tests/unit/ -v`
+- [ ] All tests passing
+- [ ] Code formatted: `ruff check . --fix && black .`
+- [ ] Update documentation (mark phase complete)
+- [ ] Commit documentation update
+- [ ] Push all commits to remote
+
+**Session Complete:**
+- [ ] All todos completed
+- [ ] Full test suite passing
+- [ ] Documentation updated
+- [ ] All commits pushed
+- [ ] Clean working directory (`git status`)
+
+---
+
+## Example Session Flow
+
+```bash
+# 1. Setup
+source venv/bin/activate
+pytest tests/unit/ -v  # Baseline (X tests passing)
+
+# 2. Create todo list
+# Use your tracker of choice with 8-12 tasks
+
+# 3. For each task:
+#    a. Write tests (RED)
+pytest tests/unit/test_feature.py::test_specific -v  # FAIL ✅
+#    b. Implement (GREEN)
+pytest tests/unit/test_feature.py::test_specific -v  # PASS ✅
+#    c. Format (REFACTOR)
+ruff check . --fix && black .
+#    d. Commit
+git add -A && git commit -m "feat: ..."
+#    e. Update todo (mark complete)
+
+# 4. After all tasks:
+pytest tests/unit/ -v  # All X+Y tests passing ✅
+git add -A && git commit -m "docs: ..."
+git push
+
+# 5. Celebrate! 🎉
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+❌ **DON'T:**
+- Write production code without tests first
+- Skip running tests after changes
+- Commit code that doesn't pass tests
+- Leave todos as "in_progress" when complete
+- Write vague commit messages
+- Push without running full test suite
+- Skip formatting/linting
+- Batch multiple features in one commit
+
+✅ **DO:**
+- Write tests before implementation (TDD)
+- Run tests frequently (after every change)
+- Only commit passing code
+- Update todos immediately after completing tasks
+- Write descriptive, detailed commit messages
+- Run full test suite before pushing
+- Format and lint after every component
+- Commit after each completed section
+
+---
+
+## Tools & Commands Reference
+
+### Essential Commands
+
+```bash
+# Environment
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
+# Windows (PowerShell): .\venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+
+# Testing
+pytest tests/unit/ -v                    # All unit tests
+pytest tests/unit/test_file.py -v        # Specific file
+pytest tests/unit/ -k "pattern" -v       # Tests matching pattern
+pytest tests/unit/ --tb=short            # Short traceback
+
+# Code Quality
+ruff check your_package/ tests/ --fix    # Lint and auto-fix before formatting
+black your_package/ tests/               # Format
+
+# Git
+git status
+git add -A
+git commit -m "type: message"
+git push
+git log --oneline -5                     # Recent commits
+```
+
+### PyTest Markers
+
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_async_function():
+    """Test async code."""
+    pass
+
+@pytest.mark.parametrize("input,expected", [
+    ("hello", "HELLO"),
+    ("world", "WORLD"),
+])
+def test_with_params(input, expected):
+    """Test with multiple inputs."""
+    assert input.upper() == expected
+```
+
+---
+
+## Success Metrics
+
+After following this workflow, you should have:
+
+✅ **High Confidence** - All code is tested before it's written  
+✅ **Fast Feedback** - Tests catch issues immediately  
+✅ **Clean History** - Clear commits showing progression  
+✅ **Documentation** - Code and docs stay in sync  
+✅ **Maintainability** - Easy to refactor with test safety net  
+✅ **Quality** - Consistent formatting and linting  
+✅ **Visibility** - Todo list tracks progress clearly  
+
+---
+
+## Troubleshooting
+
+### Tests Won't Run
+
+```bash
+# Check Python path
+python -c "import sys; print(sys.path)"
+
+# Reinstall in editable mode (with dev extras)
+pip install -e ".[dev]"
+
+# Check pytest can find tests
+pytest --collect-only
+```
+
+### Tests Pass Individually but Fail Together
+
+```bash
+# Database state or shared resources
+# Use pytest fixtures with proper scope
+
+@pytest.fixture(scope="function")
+def clean_db():
+    """Create clean database for each test."""
+    db = create_database()
+    yield db
+    db.cleanup()
+```
+
+### Import Errors
+
+```bash
+# Ensure package modules expose __init__.py when needed
+touch your_package/__init__.py
+# Only add __init__.py under tests/ if you intentionally need package-style imports
+```
+
+---
+
+**Remember:** This workflow is optimized for quality and confidence. The extra time spent on tests upfront saves exponentially more time debugging production issues later.
+
+**When in doubt, write a test first!**
