@@ -47,7 +47,9 @@ Install base tooling (macOS example):
 
 ```bash
 brew install uv just
-uv tool install ruff mypy
+# Install tools separately (uv tool install doesn't support multiple packages in one command)
+uv tool install ruff
+uv tool install mypy
 ```
 
 > On Linux/WSL: `pipx install uv` or download binaries from <https://github.com/astral-sh/uv>.
@@ -81,6 +83,7 @@ dependencies = [
   "structlog>=24.2",
   "psycopg[binary]>=3.2",
   "sqlite-utils>=3.36",
+  "result>=0.16",
 ]
 
 [project.optional-dependencies]
@@ -98,7 +101,70 @@ Install everything:
 uv sync --all-extras
 ```
 
-### 3. Create `justfile`
+### 3. Configure pytest and Ruff
+
+Add these configurations to your `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+# Use importlib mode for cleaner test imports (recommended for src/ layout)
+addopts = [
+    "--import-mode=importlib",
+]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable recommended rules
+select = ["E", "F", "I", "N", "W", "UP"]
+
+# Disable rules that conflict with ruff format
+ignore = [
+    "E111",   # indentation-with-invalid-multiple
+    "E114",   # indentation-with-invalid-multiple-comment
+    "E117",   # over-indented
+    "W191",   # tab-indentation
+    "D206",   # docstring-tab-indentation
+    "D300",   # triple-single-quotes
+    "Q000",   # bad-quotes-inline-string
+    "Q001",   # bad-quotes-multiline-string
+    "Q002",   # bad-quotes-docstring
+    "Q003",   # avoidable-escaped-quote
+    "COM812", # missing-trailing-comma
+    "COM819", # prohibited-trailing-comma
+    "ISC001", # single-line-implicit-string-concatenation
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+```
+
+**Why these configurations?**
+- **pytest importlib mode**: Cleaner imports, no `sys.path` manipulation (pytest recommendation)
+- **Ruff ignore list**: Prevents formatter/linter conflicts (official Ruff guidance)
+- **Coverage fail_under**: Enforces 90% coverage threshold in CI/CD
+
+See:
+- [pytest good practices](https://docs.pytest.org/en/stable/explanation/goodpractices.html)
+- [Ruff formatter conflicts](https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules)
+
+### 4. Create `justfile`
 
 ```just
 set shell := ["bash", "-c"]
@@ -108,16 +174,16 @@ dotenv := "set -a && source .env && set +a"
 alias ci := check
 
 lint:
-	uv run ruff check src tests
+	{{dotenv}} uv run ruff check src tests
 
 fmt:
-	uv run ruff format src tests
+	{{dotenv}} uv run ruff format src tests
 
 typecheck:
-	uv run mypy src
+	{{dotenv}} uv run mypy src
 
 test:
-	uv run pytest --cov=src --cov-report=term-missing
+	{{dotenv}} uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=90
 
 check:
 	just fmt
@@ -126,22 +192,24 @@ check:
 	just test
 
 run:
-	uv run python -m python_service
+	{{dotenv}} uv run python -m python_service
 
 db-test:
-	./scripts/db/test-db.sh
+	{{dotenv}} ./scripts/db/test-db.sh
 
 integration:
 	just db-test
-	uv run pytest tests/integration
+	{{dotenv}} uv run pytest tests/integration
 ```
 
-### 4. Automation scripts
+Each command prefixes with `dotenv` so `.env` variables load automatically for local runs without leaking into version control.
 
-- `scripts/db/test-db.sh` - executes shared Postgres or SQLite workflow commands (Sqitch deploy, pgTAP/tapsqlite tests).  
+### 5. Automation scripts
+
+- `scripts/db/test-db.sh` - executes shared Postgres or SQLite workflow commands (Sqitch deploy, pgTAP/tapsqlite tests).
 - `scripts/devserver.sh` optional - run service with hot reload using `watchfiles` or `uv run fastapi dev`.
 
-### 5. Environment configuration
+### 6. Environment configuration
 
 ```
 # .env.example
@@ -179,6 +247,8 @@ Run:
 ```bash
 just test
 ```
+
+> `just test` enforces the coverage floor configured in the Justfile (default 90%); tune `--cov-fail-under` to match your team's baseline.
 
 ### Step 2: GREEN - Implement minimally
 
@@ -227,9 +297,9 @@ git commit -m "feat: add user service domain validation"
 2. Use pytest fixtures to copy the pristine SQLite test file or reset Postgres schema.
 
 ```python
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def sqlite_db(tmp_path_factory):
-    target = tmp_path_factory.mktemp("db") / "app.sqlite"
+    target = tmp_path_factory.mktemp("db-test") / "app.sqlite"
     shutil.copy(os.environ["SQLITE_TEST_DB_PATH"], target)
     conn = sqlite3.connect(target)
     try:
@@ -251,7 +321,8 @@ def sqlite_db(tmp_path_factory):
 ```Dockerfile
 FROM ghcr.io/astral-sh/uv:alpine AS build
 WORKDIR /app
-COPY pyproject.toml uv.lock src/ .
+COPY pyproject.toml uv.lock ./
+COPY src/ /app/src
 RUN uv sync --compile-bytecode --no-dev
 
 FROM python:3.12-slim
@@ -263,6 +334,23 @@ CMD ["python", "-m", "python_service"]
 ```
 
 - `uv export requirements.txt` if you must deploy to environments without `uv`.
+
+## Security & Compliance
+
+- Run dependency audits regularly: `uv run pip-audit` (or `uv run safety check`) and fail CI on vulnerabilities.  
+- Keep build contexts lean with a `.dockerignore`:
+
+    ```
+    .venv
+    __pycache__
+    .pytest_cache
+    .mypy_cache
+    .ruff_cache
+    .coverage
+    .env
+    ```
+
+- Scan container artifacts before release, e.g. `trivy image <registry>/<app>:<tag>`.
 
 ---
 

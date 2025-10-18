@@ -88,7 +88,8 @@ go-service/
 ```just
 set shell := ["bash", "-c"]
 
-dotenv := "set -a && source .env && set +a"
+# Load environment variables from .env if it exists
+set dotenv-load := true
 
 alias ci := check
 
@@ -160,6 +161,24 @@ func TestService_Create(t *testing.T) {
 	if created.Email != "demo@example.com" {
 		t.Fatalf("expected email demo@example.com, got %s", created.Email)
 	}
+	if created.Name != "Demo" {
+		t.Fatalf("expected name Demo, got %s", created.Name)
+	}
+}
+
+// inMemoryRepo returns a test repository implementation
+func inMemoryRepo() user.Repository {
+	return &mockRepo{}
+}
+
+type mockRepo struct{}
+
+func (m *mockRepo) Create(ctx context.Context, input user.CreateInput) (user.User, error) {
+	return user.User{
+		ID:    1,
+		Email: input.Email,
+		Name:  input.Name,
+	}, nil
 }
 ```
 
@@ -174,7 +193,14 @@ package user
 import (
 	"context"
 	"errors"
+	"regexp"
 )
+
+type User struct {
+	ID    int64
+	Email string
+	Name  string
+}
 
 type Repository interface {
 	Create(ctx context.Context, input CreateInput) (User, error)
@@ -193,13 +219,20 @@ type CreateInput struct {
 	Name  string
 }
 
-var ErrInvalidEmail = errors.New("invalid email")
+var (
+	ErrInvalidEmail = errors.New("invalid email")
+	emailRegex      = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+)
 
 func (s *Service) Create(ctx context.Context, input CreateInput) (User, error) {
 	if !isValidEmail(input.Email) {
 		return User{}, ErrInvalidEmail
 	}
 	return s.repo.Create(ctx, input)
+}
+
+func isValidEmail(email string) bool {
+	return len(email) > 0 && len(email) <= 254 && emailRegex.MatchString(email)
 }
 ```
 
@@ -244,11 +277,14 @@ func TestRepository_Create(t *testing.T) {
 
 ## Packaging & Delivery
 
-- **Binary**: `go build -o bin/service ./cmd/api`.  
-- **Cross-compile**: `GOOS=linux GOARCH=amd64 go build ...`.  
-- **Dockerfile** (scratch example):
+- **Binary**: `go build -o bin/service ./cmd/api`.
+- **Cross-compile**: `GOOS=linux GOARCH=amd64 go build ...`.
+- **Dockerfile** (multi-stage with tests):
 
 ```Dockerfile
+# syntax=docker/dockerfile:1
+
+# Build stage
 FROM golang:1.22-alpine AS build
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -256,6 +292,11 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o service ./cmd/api
 
+# Test stage (runs tests in container)
+FROM build AS test
+RUN go test -v -race ./...
+
+# Final stage
 FROM gcr.io/distroless/base-debian12
 WORKDIR /
 COPY --from=build /app/service .
@@ -263,7 +304,45 @@ USER nonroot:nonroot
 ENTRYPOINT ["./service"]
 ```
 
+**Build with tests:**
+```bash
+# Build and run tests
+docker build --target test -t go-service-test .
+
+# Build final image (tests run automatically as dependency)
+docker build -t go-service:latest .
+```
+
+**Important:** The `USER nonroot:nonroot` directive is specific to distroless images. If using alpine or debian, use numeric UID/GID:
+```Dockerfile
+USER 65532:65532
+```
+
 - **Release**: tag commits, push binaries to GitHub Releases, update README.
+
+### .dockerignore
+
+Create a `.dockerignore` to keep sensitive files and build artifacts out of the image:
+
+```
+# .dockerignore
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+*.md
+README*
+LICENSE
+bin/
+tmp/
+.air.toml
+.golangci.yml
+Makefile
+justfile
+scripts/
+docs/
+```
 
 ---
 

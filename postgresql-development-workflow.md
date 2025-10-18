@@ -40,11 +40,17 @@ This workflow keeps database development **language agnostic** by centering on S
 **Install essentials (macOS example):**
 
 ```bash
-brew install libpq pgduplication sqitch pgcli pgstatstatements pgformatter
+brew install libpq sqitch pgcli pgformatter
 brew install pgtap   # installs pg_prove; requires Postgres headers
 ```
 
-> On Linux, install via package manager (`apt install postgresql-client sqitch pgtap`). On Windows, use Chocolatey or WSL.
+**Note:** `pg_stat_statements` is a PostgreSQL extension, not a brew package. Enable it via:
+```sql
+CREATE EXTENSION pg_stat_statements;
+-- Requires shared_preload_libraries = 'pg_stat_statements' in postgresql.conf
+```
+
+> On Linux, install via package manager (`apt install postgresql-client sqitch pgtap pgformatter`). On Windows, use Chocolatey or WSL.
 
 ---
 
@@ -150,7 +156,8 @@ sqitch verify --db-name $PGDATABASE   # should pass (no changes yet)
 ```just
 set shell := ["bash", "-c"]
 
-dotenv := "set -a && source .env && set +a"
+# Load environment variables from .env if it exists
+set dotenv-load := true
 
 alias ci := check
 
@@ -161,13 +168,13 @@ down:
 	docker compose -f docker/docker-compose.yml down
 
 bootstrap:
-	{{dotenv}} && sqitch deploy --verify
+	sqitch deploy --verify
 
 reset:
-	{{dotenv}} && sqitch revert --to @HEAD^ && sqitch deploy --verify
+	sqitch revert --to @HEAD^ && sqitch deploy --verify
 
 test:
-	{{dotenv}} && pg_prove --runtests db/tests
+	pg_prove --runtests db/tests
 
 check:
 	just test

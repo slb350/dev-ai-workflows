@@ -28,21 +28,21 @@ This workflow prioritizes **quality**, **maintainability**, and **confidence** t
 ### Phase 1: Planning & Setup
 
 ```bash
-# 1. Create/activate virtual environment
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# Windows (PowerShell): .\venv\Scripts\Activate.ps1
+# 1. Sync dependencies (creates .venv if missing and respects uv.lock)
+uv sync --dev
+# Include the extras you rely on (testing, typing, etc.)
+# Example: uv sync --dev --extra testing --extra typing
 
-# 2. Install dependencies declared in pyproject.toml
-# Ensure dev tooling lives under [project.optional-dependencies].dev
-pip install -e ".[dev]"
+# 2. (Optional) Activate the managed virtual environment
+source .venv/bin/activate  # macOS/Linux
+# Windows (PowerShell): .\.venv\Scripts\Activate.ps1
 
-# 3. Verify environment
-python -c "import your_package"
-# Optional: python -c "import importlib.metadata as md; print(md.version('your-package'))"
+# 3. Verify environment through uv
+uv run python -c "import your_package"
+# Optional: uv run python -c "import importlib.metadata as md; print(md.version('your-package'))"
 ```
 
-Note: Keep development tooling listed under `[project.optional-dependencies].dev` in `pyproject.toml` so `pip install -e ".[dev]"` stays the single source of truth. This workflow standardizes on `pip` for managing editable installs and extras.
+Note: Keep development tooling in `[project.optional-dependencies]` and `[tool.uv]` so `uv sync` stays the single source of truth. Regenerate the lockfile with `uv lock` when dependencies change and commit `uv.lock` to guarantee reproducible installs (`uv sync --frozen` enforces the lock in CI).
 
 **Create Todo List:**
 ```python
@@ -130,13 +130,16 @@ pytest tests/unit/test_[feature].py -v
 
 ```bash
 # Lint and auto-fix (run before formatting so import fixes stick)
-ruff check your_package/ tests/ --fix
+uv run ruff check your_package/ tests/ --fix
 
-# Format code
-black your_package/ tests/
+# Format code (Ruff's formatter replaces Black)
+uv run ruff format your_package/ tests/
+
+# Enforce static types
+uv run mypy your_package
 
 # Verify tests still pass after refactoring
-pytest tests/unit/test_[feature].py -v
+uv run pytest tests/unit/test_[feature].py -v
 ```
 
 **Update todo:**
@@ -149,6 +152,9 @@ pytest tests/unit/test_[feature].py -v
 #### Step 4: COMMIT - Save Progress
 
 ```bash
+# Run full suite with coverage gate before committing
+uv run pytest tests/unit/ -v --cov=your_package --cov-report=term-missing --cov-fail-under=90
+
 # Stage changes
 git add -A
 
@@ -309,9 +315,24 @@ Updated implementation plan to reflect completion:
 
 ```bash
 # Always run before committing
-ruff check your_package/ tests/ --fix
-black your_package/ tests/
+uv run ruff check your_package/ tests/ --fix
+uv run ruff format your_package/ tests/
 ```
+
+### Type Checking
+
+```bash
+uv run mypy your_package
+# Alternative: uv run pyright
+```
+
+### Test Coverage
+
+```bash
+uv run pytest --cov=your_package --cov-report=term-missing --cov-fail-under=90
+```
+
+Set the `--cov-fail-under` value to your agreed minimum (90% is a common floor for libraries, services may vary).
 
 ### Type Hints
 
@@ -352,6 +373,93 @@ def method(param1: str, param2: int = 0) -> bool:
     """
     pass
 ```
+
+---
+
+## Configuration Best Practices
+
+### pytest Configuration
+
+For projects with a `src/` layout, pytest recommends using `importlib` import mode (instead of the default `prepend` mode). This prevents test discovery issues and name collisions.
+
+Add to your `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+# Optional: specify test paths
+testpaths = ["tests"]
+```
+
+**Why importlib mode?**
+- Cleaner: No `sys.path` manipulation
+- Safer: Avoids name collisions between test modules
+- Modern: Recommended for all new projects by pytest team
+
+See: [pytest good practices](https://docs.pytest.org/en/stable/explanation/goodpractices.html)
+
+### Ruff Configuration: Avoiding Formatter/Linter Conflicts
+
+When using `ruff format` alongside `ruff check`, certain lint rules conflict with the formatter. The official Ruff documentation recommends disabling these rules.
+
+Add to your `pyproject.toml`:
+
+```toml
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable recommended rules
+select = ["E", "F", "I", "N", "W", "UP"]
+
+# Disable rules that conflict with ruff format
+ignore = [
+    "E111",   # indentation-with-invalid-multiple
+    "E114",   # indentation-with-invalid-multiple-comment
+    "E117",   # over-indented
+    "W191",   # tab-indentation
+    "D206",   # docstring-tab-indentation
+    "D300",   # triple-single-quotes
+    "Q000",   # bad-quotes-inline-string
+    "Q001",   # bad-quotes-multiline-string
+    "Q002",   # bad-quotes-docstring
+    "Q003",   # avoidable-escaped-quote
+    "COM812", # missing-trailing-comma
+    "COM819", # prohibited-trailing-comma
+    "ISC001", # single-line-implicit-string-concatenation
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+```
+
+**Note:** `line-too-long` (E501) can also be problematic since the formatter only makes a "best-effort" attempt to wrap lines. Consider disabling it if you trust the formatter.
+
+See: [Ruff formatter conflicting rules](https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules)
+
+### Coverage Configuration
+
+Add to your `pyproject.toml`:
+
+```toml
+[tool.coverage.run]
+source = ["your_package"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+```
+
+This ensures `pytest --cov --cov-fail-under=80` will fail if coverage drops below 80%.
 
 ---
 
@@ -408,9 +516,10 @@ tests/
 - [ ] Commit with descriptive message (COMMIT)
 
 **After Each Phase:**
-- [ ] Run full test suite: `pytest tests/unit/ -v`
+- [ ] Run full test suite with coverage gate: `uv run pytest tests/unit/ --cov=your_package --cov-report=term-missing --cov-fail-under=90`
 - [ ] All tests passing
-- [ ] Code formatted: `ruff check . --fix && black .`
+- [ ] Code formatted and linted: `uv run ruff check . --fix && uv run ruff format .`
+- [ ] Type checks clean: `uv run mypy your_package`
 - [ ] Update documentation (mark phase complete)
 - [ ] Commit documentation update
 - [ ] Push all commits to remote
@@ -428,25 +537,28 @@ tests/
 
 ```bash
 # 1. Setup
-source venv/bin/activate
-pytest tests/unit/ -v  # Baseline (X tests passing)
+uv sync --dev --extra testing --extra typing  # Adjust extras to match your pyproject
+uv run pytest tests/unit/ -v  # Baseline (X tests passing)
 
 # 2. Create todo list
 # Use your tracker of choice with 8-12 tasks
 
 # 3. For each task:
 #    a. Write tests (RED)
-pytest tests/unit/test_feature.py::test_specific -v  # FAIL ✅
+uv run pytest tests/unit/test_feature.py::test_specific -v  # FAIL ✅
 #    b. Implement (GREEN)
-pytest tests/unit/test_feature.py::test_specific -v  # PASS ✅
-#    c. Format (REFACTOR)
-ruff check . --fix && black .
+uv run pytest tests/unit/test_feature.py::test_specific -v  # PASS ✅
+#    c. Refine (REFACTOR)
+uv run ruff check . --fix
+uv run ruff format .
+uv run mypy your_package
+uv run pytest tests/unit/test_feature.py::test_specific -v  # Smoke regression check
 #    d. Commit
 git add -A && git commit -m "feat: ..."
 #    e. Update todo (mark complete)
 
 # 4. After all tasks:
-pytest tests/unit/ -v  # All X+Y tests passing ✅
+uv run pytest tests/unit/ -v --cov=your_package --cov-report=term-missing --cov-fail-under=90  # All X+Y tests passing ✅
 git add -A && git commit -m "docs: ..."
 git push
 
@@ -485,20 +597,20 @@ git push
 
 ```bash
 # Environment
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# Windows (PowerShell): .\venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
+uv sync --dev --extra testing --extra typing  # Install everything declared in pyproject.toml
+uv run python -c "import your_package"        # Quick import smoke test
 
 # Testing
-pytest tests/unit/ -v                    # All unit tests
-pytest tests/unit/test_file.py -v        # Specific file
-pytest tests/unit/ -k "pattern" -v       # Tests matching pattern
-pytest tests/unit/ --tb=short            # Short traceback
+uv run pytest tests/unit/ -v                                     # All unit tests
+uv run pytest tests/unit/test_file.py -v                         # Specific file
+uv run pytest tests/unit/ -k "pattern" -v                        # Tests matching pattern
+uv run pytest tests/unit/ --tb=short                             # Short traceback
+uv run pytest tests/unit/ -v --cov=your_package --cov-report=term-missing --cov-fail-under=90  # Coverage gate
 
 # Code Quality
-ruff check your_package/ tests/ --fix    # Lint and auto-fix before formatting
-black your_package/ tests/               # Format
+uv run ruff check your_package/ tests/ --fix   # Lint and auto-fix before formatting
+uv run ruff format your_package/ tests/        # Format
+uv run mypy your_package                       # Static type checking
 
 # Git
 git status
@@ -549,13 +661,13 @@ After following this workflow, you should have:
 
 ```bash
 # Check Python path
-python -c "import sys; print(sys.path)"
+uv run python -c "import sys; print(sys.path)"
 
 # Reinstall in editable mode (with dev extras)
-pip install -e ".[dev]"
+uv sync --dev --extra testing --extra typing
 
 # Check pytest can find tests
-pytest --collect-only
+uv run pytest --collect-only
 ```
 
 ### Tests Pass Individually but Fail Together

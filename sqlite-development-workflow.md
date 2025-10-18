@@ -80,21 +80,39 @@ sqlite-project/
 SQLITE_DB_PATH=data/dev.sqlite
 SQLITE_TEST_DB_PATH=data/test.sqlite
 SQLITE_JOURNAL_MODE=WAL
-SQLITE_SYNCHRONOUS=FULL
+SQLITE_SYNCHRONOUS=NORMAL  # NORMAL is recommended for WAL mode (ACID minus power-loss durability)
 SQLITE_CACHE_SIZE=-2000  # Pages (~page_size * value). Negative => KB.
 ```
 
+**About SYNCHRONOUS setting:**
+- **NORMAL** (default for WAL): Provides atomic, consistent, isolated transactions. Loses durability across power loss but safe for most applications.
+- **FULL**: Adds fsync after every transaction for power-loss durability. Use only if your application absolutely requires surviving mid-transaction power failures.
+- See: [SQLite PRAGMA synchronous](https://sqlite.org/pragma.html#pragma_synchronous)
+
 Copy to `.env`, adjust per environment, and never commit secrets (if using encryption/compression).
 
-### 3. Provision empty databases
+### 3. Provision empty databases and configure pragmas
 
-```bash
-mkdir -p data
-sqlite3 data/dev.sqlite "PRAGMA journal_mode=WAL;"
-sqlite3 data/test.sqlite "PRAGMA journal_mode=WAL;"
+Create `db/pragmas.sql` with recommended settings:
+
+```sql
+-- Essential pragmas for SQLite (execute on every connection)
+PRAGMA foreign_keys = ON;        -- OFF by default! Must enable explicitly
+PRAGMA journal_mode = WAL;       -- Write-Ahead Logging for better concurrency
+PRAGMA synchronous = NORMAL;     -- Balanced performance/durability for WAL mode
+PRAGMA cache_size = -2000;       -- 2MB cache (negative = KB)
+PRAGMA temp_store = MEMORY;      -- Keep temp tables in memory
 ```
 
-Optional: configure default pragmas for new connections via a helper SQL file (`db/pragmas.sql`) loaded before migrations.
+**Important:** `PRAGMA foreign_keys` is OFF by default in SQLite and must be enabled per connection. Add this to your application's connection initialization.
+
+Initialize databases:
+
+```bash
+mkdir -p data db/tests docs/schema
+sqlite3 data/dev.sqlite < db/pragmas.sql
+sqlite3 data/test.sqlite < db/pragmas.sql
+```
 
 ### 4. Configure Sqitch for SQLite (optional but recommended)
 
@@ -111,22 +129,23 @@ Define targets in `sqitch.conf` for `dev`, `test`, and release artifacts. Sqitch
 ```just
 set shell := ["bash", "-c"]
 
-dotenv := "set -a && source .env && set +a"
+# Load environment variables from .env if it exists
+set dotenv-load := true
 
 alias ci := check
 
 init:
 	mkdir -p data db/tests docs/schema
-	sqlite3 data/dev.sqlite "PRAGMA journal_mode=WAL;"
-	sqlite3 data/test.sqlite "PRAGMA journal_mode=WAL;"
+	sqlite3 data/dev.sqlite < db/pragmas.sql
+	sqlite3 data/test.sqlite < db/pragmas.sql
 
 bootstrap:
-	{{dotenv}} && sqitch deploy --verify --target dev
+	sqitch deploy --verify --target dev
 
 reset-test:
 	rm -f $SQLITE_TEST_DB_PATH
-	sqlite3 $SQLITE_TEST_DB_PATH "PRAGMA journal_mode=WAL;"
-	{{dotenv}} && sqitch deploy --verify --target test
+	sqlite3 $SQLITE_TEST_DB_PATH < db/pragmas.sql
+	sqitch deploy --verify --target test
 
 test:
 	./scripts/run-tests.sh
@@ -352,14 +371,15 @@ git commit -m "feat(db): add users schema with audit trigger"
 
 ## Anti-Patterns to Avoid
 
-- Letting application ORMs define schema without SQL migration source of truth.  
-- Ignoring `PRAGMA foreign_keys=ON;` (off by default).  
-- Using WAL without understanding checkpointing.  
-- Relying on default timestamps (use ISO-8601 via `strftime`).  
-- Storing large blobs without considering `VACUUM` cost.  
-- Skipping tests because “it’s just a file.”  
-- Moving SQLite files while open (risk of corruption).  
-- Forgetting to enable synchronous mode for durability-sensitive apps.  
+- Letting application ORMs define schema without SQL migration source of truth.
+- **Forgetting `PRAGMA foreign_keys=ON;`** (off by default, must enable on every connection).
+- Using WAL without understanding checkpointing.
+- Setting `synchronous=FULL` in WAL mode unnecessarily (NORMAL is sufficient for most apps).
+- Relying on default timestamps (use ISO-8601 via `strftime`).
+- Storing large blobs without considering `VACUUM` cost.
+- Skipping tests because "it's just a file."
+- Moving SQLite files while open (risk of corruption).
+- Using `synchronous=OFF` in production (risks corruption on OS crash).  
 
 ---
 

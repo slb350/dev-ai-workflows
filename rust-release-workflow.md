@@ -98,7 +98,8 @@ rust-app/
 ```just
 set shell := ["bash", "-c"]
 
-dotenv := "set -a && source .env && set +a"
+# Load environment variables from .env if it exists
+set dotenv-load := true
 
 alias ci := check
 

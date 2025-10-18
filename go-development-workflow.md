@@ -32,78 +32,48 @@ This workflow prioritizes **quality**, **performance**, and **maintainability** 
 # 1. Initialize Go module
 go mod init github.com/username/projectname
 
-# 2. Pin development tools (adjust versions to match your project policy)
-mkdir -p tools
-cat <<'EOF' > tools/tools.go
-//go:build tools
-// +build tools
+# 2. Install development tools
+# golangci-lint: Use binary installation (recommended by golangci-lint team)
+# See: https://golangci-lint.run/welcome/install/#local-installation
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
 
-package tools
-
-import (
-    _ "github.com/golangci/golangci-lint/cmd/golangci-lint"
-    _ "golang.org/x/tools/cmd/goimports"
-    _ "github.com/air-verse/air"
-    _ "github.com/golang/mock/mockgen"
-)
-EOF
-
-go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.1
-go get golang.org/x/tools/cmd/goimports@v0.20.0
-go get github.com/air-verse/air@v1.49.0
-go get github.com/golang/mock/mockgen@v1.6.0
-
-# Install binaries at the pinned versions
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.1
+# Other Go tools: Use go install with pinned versions
 go install golang.org/x/tools/cmd/goimports@v0.20.0
-go install github.com/air-verse/air@v1.49.0  # Optional hot reload
+go install github.com/air-verse/air@v1.52.0  # Optional hot reload
 go install github.com/golang/mock/mockgen@v1.6.0
 
 # 3. Verify environment
 go version
+golangci-lint --version
 go mod tidy
 go build ./...
 ```
 
-**Tool bootstrap helpers (choose what fits your team):**
-
-```makefile
-# Makefile
-TOOLS = \
-	github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.1 \
-	golang.org/x/tools/cmd/goimports@v0.20.0 \
-	github.com/air-verse/air@v1.49.0 \
-	github.com/golang/mock/mockgen@v1.6.0
-
-.PHONY: tools
-tools:
-	@for tool in $(TOOLS); do \
-		echo "Installing $$tool"; \
-		go install $$tool; \
-	done
-```
+**Tool bootstrap helper (optional):**
 
 ```just
 # justfile
 set shell := ["bash", "-cu"]
 
-TOOLS := [
-  "github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.1",
-  "golang.org/x/tools/cmd/goimports@v0.20.0",
-  "github.com/air-verse/air@v1.49.0",
-  "github.com/golang/mock/mockgen@v1.6.0",
-]
+# Load environment variables from .env if it exists
+set dotenv-load := true
 
 alias bootstrap := tools
 
+# Install all development tools
 tools:
-	for tool in {{TOOLS}}; do \
-		echo "Installing $$tool"; \
-		go install $$tool; \
-	done
+	@echo "Installing golangci-lint (binary)..."
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+	@echo "Installing goimports..."
+	@go install golang.org/x/tools/cmd/goimports@v0.20.0
+	@echo "Installing air (hot reload)..."
+	@go install github.com/air-verse/air@v1.52.0
+	@echo "Installing mockgen..."
+	@go install github.com/golang/mock/mockgen@v1.6.0
+	@echo "All tools installed successfully!"
 ```
 
-Keep the version list in one place (go.mod, Makefile, or justfile) so the entire team installs consistent tooling.
+**Note:** golangci-lint recommends binary installation over `go install` for reliability. See their [installation docs](https://golangci-lint.run/welcome/install/) for details.
 
 **Create Todo List:**
 ```go
@@ -285,9 +255,8 @@ go test ./pkgname -v
 #### Step 3: REFACTOR - Clean & Format
 
 ```bash
-# Format code
+# Format code (goimports handles both formatting and imports)
 goimports -w .
-go fmt ./...
 
 # Lint and auto-fix
 golangci-lint run --fix
@@ -395,6 +364,46 @@ For each package/component, test:
 - ✅ **Context handling** - Proper context cancellation and timeouts
 - ✅ **Resource cleanup** - Proper defer and cleanup
 - ✅ **Benchmarks** - Performance characteristics (if relevant)
+
+### When to Use Context in Tests
+
+Use `context.Context` in tests when testing:
+
+1. **Timeouts and Cancellation** - Functions that should respect context deadlines or cancellation
+2. **I/O Operations** - Database queries, HTTP requests, file operations
+3. **Long-Running Operations** - Any operation that might hang or take too long
+4. **Production Behavior** - When you want tests to mirror how code is called in production
+
+**Example:**
+
+```go
+func TestService_ProcessWithTimeout(t *testing.T) {
+    svc := NewService()
+
+    // Use context with timeout to ensure test doesn't hang
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    result, err := svc.Process(ctx, "input")
+
+    require.NoError(t, err)
+    assert.NotEmpty(t, result)
+}
+
+func TestService_ProcessCancellation(t *testing.T) {
+    svc := NewService()
+
+    ctx, cancel := context.WithCancel(context.Background())
+    cancel() // Cancel immediately
+
+    _, err := svc.Process(ctx, "input")
+
+    // Should return context.Canceled error
+    assert.ErrorIs(t, err, context.Canceled)
+}
+```
+
+**Skip context** for simple unit tests of pure functions or operations that don't involve I/O, timeouts, or cancellation.
 
 ### Test Naming Convention
 
@@ -623,10 +632,9 @@ test-coverage:
 build:
 	go build -o bin/server ./cmd/server
 
-# Format code
+# Format code (goimports handles both formatting and imports)
 fmt:
 	goimports -w .
-	go fmt ./...
 
 # Run linter
 lint:
@@ -771,9 +779,8 @@ Testing:
 ### Formatting
 
 ```bash
-# Always run before committing
+# Always run before committing (goimports handles both formatting and imports)
 goimports -w .
-go fmt ./...
 golangci-lint run --fix
 ```
 
@@ -870,7 +877,7 @@ func NewService(config Config) (*Service, error) {
 **After Each Phase:**
 - [ ] Run full test suite: `go test -v -race ./...`
 - [ ] All tests passing
-- [ ] Code formatted: `goimports -w . && go fmt ./...`
+- [ ] Code formatted: `goimports -w .`
 - [ ] Linting clean: `golangci-lint run`
 - [ ] Coverage check: `go test -cover ./...`
 - [ ] Update documentation (mark phase complete)
@@ -907,7 +914,7 @@ go test ./pkgname -v -run TestSpecific  # PASS ✅
 #    c. Test with race detection
 go test ./pkgname -race -v  # PASS ✅
 #    d. Format (REFACTOR)
-goimports -w . && go fmt ./... && golangci-lint run --fix
+goimports -w . && golangci-lint run --fix
 #    e. Commit
 git add -A && git commit -m "feat(pkgname): ..."
 #    f. Update todo (mark complete)
@@ -1044,8 +1051,7 @@ go build -o bin/app ./cmd/server        # Build executable
 go install ./cmd/server                 # Install to GOBIN
 
 # Code quality
-go fmt ./...                           # Format code
-goimports -w .                         # Format imports
+goimports -w .                         # Format code and imports
 go vet ./...                           # Static analysis
 golangci-lint run                      # Comprehensive linting
 
@@ -1207,7 +1213,7 @@ func TestComplexOperation(t *testing.T) {
 ### Integration Testing
 
 ```go
-// tests/integration/service_test.go
+// internal/integration/service_test.go
 //go:build integration
 // +build integration
 

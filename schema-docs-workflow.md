@@ -53,30 +53,73 @@ docs/
 
 ---
 
+## Installation
+
+Install the schema documentation tools you need:
+
+```bash
+# SchemaSpy (requires Java 8+)
+# Option 1: Direct download from https://github.com/schemaspy/schemaspy/releases
+# Option 2: Use Docker (recommended for easier setup)
+docker pull schemaspy/schemaspy:latest
+
+# sqlite-erd (requires Rust)
+cargo install sqlite-erd
+
+# sqlite-utils (Python-based, for SQLite metadata management)
+pip install sqlite-utils
+
+# Alternative: tbls (Go-based, CI-friendly)
+# https://github.com/k1LoW/tbls
+brew install k1LoW/tap/tbls
+
+# Alternative: Liam ERD (modern web-based)
+# https://liambx.com/docs
+npm install -g liam-cli
+```
+
+**Source:** [SchemaSpy docs](https://schemaspy.readthedocs.io/), [sqlite-utils](https://sqlite-utils.datasette.io/), [tbls](https://github.com/k1LoW/tbls), [Liam ERD](https://liambx.com/docs)
+
+---
+
 ## Automation (`justfile` snippet)
 
 ```just
 set shell := ["bash", "-c"]
-
-dotenv := "set -a && source .env && set +a"
+# Use built-in dotenv support (just 1.0+)
+# Source: https://github.com/casey/just/blob/master/README.md#dotenv-settings
+set dotenv-load := true
 
 schema-docs:
 	just erd-postgres
 	just erd-sqlite
 	just schema-readme
 
+# SchemaSpy with Docker (easier than managing Java dependencies)
 erd-postgres:
-	{{dotenv}} && schemaspy -t pgsql -host $PGHOST -port $PGPORT \
+	docker run --rm --net=host \
+		-v $(pwd)/docs/schema/erd/postgres:/output \
+		schemaspy/schemaspy:latest \
+		-t pgsql -host $PGHOST -port $PGPORT \
+		-db $PGDATABASE -u $PGUSER -p $PGPASSWORD \
+		-o /output
+
+# Alternative: Direct SchemaSpy (if Java installed)
+erd-postgres-direct:
+	schemaspy -t pgsql -host $PGHOST -port $PGPORT \
 		-db $PGDATABASE -u $PGUSER -p $PGPASSWORD -o docs/schema/erd/postgres
 
 erd-sqlite:
 	sqlite-erd $SQLITE_DB_PATH --output docs/schema/erd/sqlite.svg
 
+# Example uses Python, but any language works (Go, Rust, TypeScript, shell scripts, etc.)
 schema-readme:
 	python scripts/schema/generate_readme.py
 ```
 
-Adjust commands to the tools you prefer (Dockerized SchemaSpy, dbdiagram export, etc.).
+**Why Docker for SchemaSpy?** SchemaSpy requires Java and JDBC drivers. Docker eliminates dependency management and ensures consistent results across environments.
+
+**Source:** [SchemaSpy Docker Hub](https://hub.docker.com/r/schemaspy/schemaspy)
 
 ---
 
@@ -189,11 +232,26 @@ Export comments with SchemaSpy or `psql \dd`.
 
 ### SQLite
 
-SQLite lacks built-in comment syntax, but you can:
+**Recommended:** Use `sqlite-utils` for structured metadata (cross-version compatible)
 
-- Maintain comments in docs.  
-- Use `sqlite-utils` metadata table.  
-- For SQLite 3.43+, `CREATE TABLE ... /* comment */` comments persisted in `sqlite_master`. Document parsing instructions if needed.
+```bash
+# Add table/column descriptions using sqlite-utils
+sqlite-utils add-column-description data.db users email "User login email, unique"
+sqlite-utils add-column-description data.db users created_at "Creation timestamp (UTC)"
+
+# View all metadata
+sqlite-utils tables data.db --schema --counts
+```
+
+**Alternative approaches:**
+
+- **Maintain in docs** (markdown files versioned with code)
+- **SQLite 3.43+ inline comments:** `CREATE TABLE users (id INTEGER /* primary key */)` - Comments are persisted in `sqlite_master` but require parsing
+- **sqlite-utils metadata table:** Creates a `_metadata` table for structured descriptions (recommended)
+
+**Why sqlite-utils?** SQLite doesn't have `COMMENT ON` like PostgreSQL. sqlite-utils provides a structured, queryable metadata approach that works across all SQLite versions and integrates with Datasette for exploration.
+
+**Source:** [sqlite-utils](https://sqlite-utils.datasette.io/), [SQLite Schema Table](https://sqlite.org/schematab.html)
 
 ---
 
@@ -202,13 +260,24 @@ SQLite lacks built-in comment syntax, but you can:
 Automate diff capture to highlight changes per commit:
 
 ```bash
-# Postgres
+# Postgres - Schema-only dump for comparison
 pg_dump --schema-only $DATABASE_URL > tmp/schema.sql
 diff -u docs/schema/baseline.sql tmp/schema.sql > docs/schema/diffs/$(date +%Y%m%d).diff
 
-# SQLite
+# SQLite - Basic diff
 sqldiff docs/schema/baseline.sqlite data/dev.sqlite > docs/schema/diffs/$(date +%Y%m%d).sql
+
+# SQLite - With virtual tables (FTS, rtree) - IMPORTANT
+# Use --vtab to avoid corruption of virtual table shadow tables
+sqldiff --vtab docs/schema/baseline.sqlite data/dev.sqlite > docs/schema/diffs/$(date +%Y%m%d).sql
+
+# SQLite - Schema-only comparison (ignore data)
+sqldiff --schema docs/schema/baseline.sqlite data/dev.sqlite > docs/schema/diffs/$(date +%Y%m%d)-schema.sql
 ```
+
+**⚠️ Virtual Table Warning:** If your SQLite database uses FTS3, FTS5, or rtree virtual tables, ALWAYS use the `--vtab` flag with sqldiff. Without it, the diff may include changes to internal shadow tables that can corrupt virtual tables when applied.
+
+**Source:** [SQLite sqldiff documentation](https://sqlite.org/sqldiff.html)
 
 Keep baseline files updated whenever production schema changes.
 
@@ -278,6 +347,88 @@ Keep baseline files updated whenever production schema changes.
 | Comments missing in output | Ensure `COMMENT ON` statements exist before running doc tools. |
 | SQLite doc generator lacks features | Switch to `sqlite-utils` export or manual Markdown updates. |
 | Docs out of sync | Run `just schema-docs`, review git diff, update manually. |
+
+---
+
+## Alternative Tools
+
+Beyond the tools mentioned above, consider these modern alternatives:
+
+### tbls (CI-Friendly Schema Documentation)
+
+[tbls](https://github.com/k1LoW/tbls) is a Go-based tool designed for CI/CD integration:
+
+```bash
+# Install
+brew install k1LoW/tap/tbls
+
+# Generate docs from live database
+tbls doc postgres://user:pass@localhost:5432/mydb docs/schema
+
+# Generate docs from SQLite
+tbls doc sqlite://data/dev.sqlite docs/schema
+
+# Add to CI to ensure docs stay fresh
+tbls diff postgres://user:pass@localhost:5432/mydb docs/schema
+```
+
+**Advantages:** Fast, single binary, built for automation, generates Markdown + ERD images.
+
+**Source:** [tbls GitHub](https://github.com/k1LoW/tbls)
+
+### Liam ERD (Modern Web-Based)
+
+[Liam ERD](https://liambx.com/docs) generates interactive web-based ER diagrams:
+
+```bash
+# Install
+npm install -g liam-cli
+
+# Generate from PostgreSQL dump
+pg_dump --schema-only mydb > schema.sql
+liam build schema.sql --format postgresql --output docs/schema/erd
+
+# Generate from tbls JSON
+tbls out --format json postgres://... schema.json
+liam build schema.json --format tbls --output docs/schema/erd
+```
+
+**Advantages:** Interactive browser-based UI, supports filtering/searching, can integrate with CI/CD.
+
+**Source:** [Liam ERD docs](https://liambx.com/docs)
+
+### dbdiagram.io (Design-First Approach)
+
+[dbdiagram.io](https://dbdiagram.io/) lets you define schema in a DSL and export SQL:
+
+```
+// Define schema in .dbml format
+Table users {
+  id uuid [pk]
+  email text [unique, not null]
+  created_at timestamp [default: `now()`]
+}
+
+// Export to PostgreSQL, MySQL, or SQL Server
+```
+
+**Advantages:** Design diagrams first, export SQL, shareable URLs, no database connection required.
+
+---
+
+## Related Workflows
+
+This workflow complements the database and service workflows:
+
+- [PostgreSQL Development Workflow](postgresql-development-workflow.md) - SQL-first migrations, pgTAP testing
+- [SQLite Development Workflow](sqlite-development-workflow.md) - Migration patterns, WAL mode, testing
+- [Python Service Workflow](python-service-workflow.md) - Application-level DB integration
+- [Go Service Workflow](go-service-workflow.md) - sqlc/sqlx with schema docs
+- [Rust Release Workflow](rust-release-workflow.md) - Diesel/SeaORM integration
+- [TypeScript Service Workflow](typescript-service-workflow.md) - Kysely/Drizzle with typed schemas
+- [Observability Workflow](observability-workflow.md) - Database metrics and query tracing
+
+**Workflow composition:** For any service using a database, follow this workflow alongside your language + service + database workflows to keep schema docs synchronized with migrations.
 
 ---
 
