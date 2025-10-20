@@ -37,10 +37,6 @@ Cross-cutting concerns for all projects:
 - **[Observability Workflow](observability-workflow.md)** - Structured logging, metrics, tracing, Grafana
 - **[Schema Documentation Workflow](schema-docs-workflow.md)** - ERDs, markdown docs, schema diffs
 
-### Guides & Reference
-- **[CLAUDE.md](CLAUDE.md)** - Index and mixing strategies for combining workflows
-- **[AGENTS.md](AGENTS.md)** - Guidelines for Claude Code agent interactions
-
 ## How to Use
 
 ### 1. Choose Your Language Workflow
@@ -171,10 +167,9 @@ Testing:
 ## Getting Started
 
 1. **Clone this repository** to reference workflows in your projects
-2. **Read CLAUDE.md** for the complete index and mixing strategies
-3. **Pick workflows** that match your stack
-4. **Apply practices** from each workflow to your development process
-5. **Update workflows** as your practices evolve (PRs welcome!)
+2. **Pick workflows** that match your stack (see example combinations above)
+3. **Apply practices** from each workflow to your development process
+4. **Update workflows** as your practices evolve (PRs welcome!)
 
 ## Contributing
 
@@ -186,6 +181,3 @@ When updating workflows:
 - Note breaking changes in commit messages
 - Keep workflows focused on practices, not tool versions
 
-## Questions?
-
-See **[CLAUDE.md](CLAUDE.md)** for detailed guidance on combining workflows, or **[AGENTS.md](AGENTS.md)** for Claude Code-specific instructions.

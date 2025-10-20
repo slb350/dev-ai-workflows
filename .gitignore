@@ -7,3 +7,7 @@
 # Explicitly ignore these directories
 .git
 .claude
+
+# Ignore Claude Code-specific instruction files
+CLAUDE.md
+AGENTS.md
