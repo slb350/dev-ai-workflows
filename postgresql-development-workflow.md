@@ -45,6 +45,7 @@ brew install pgtap   # installs pg_prove; requires Postgres headers
 ```
 
 **Note:** `pg_stat_statements` is a PostgreSQL extension, not a brew package. Enable it via:
+
 ```sql
 CREATE EXTENSION pg_stat_statements;
 -- Requires shared_preload_libraries = 'pg_stat_statements' in postgresql.conf
@@ -65,7 +66,7 @@ git init
 
 Create a minimal structure that works for any language runtime:
 
-```
+```text
 postgres-project/
 ├── db/
 │   ├── sqitch.conf
@@ -114,7 +115,7 @@ docker compose -f docker/docker-compose.yml up -d
 
 ### Step 3: Manage configuration safely
 
-```
+```text
 # .env.example
 PGHOST=localhost
 PGPORT=5432
@@ -229,7 +230,7 @@ just test  # or: pg_prove --dbname=$PGDATABASE db/tests/unit/users.sql
 
 Add an entry to `db/sqitch.plan`:
 
-```
+```text
 @users-schema 2025-10-17T12:00:00Z you@example.com # Create users table with constraints
 ```
 
@@ -279,10 +280,10 @@ just test        # pgTAP tests now pass
 psql $PGDATABASE -c "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM public.users WHERE email = 'demo@example.com';"
 ```
 
-2. Add partial or covering indexes based on the access pattern.  
-3. Consider table partitioning or sharding if growth demands.  
-4. Review triggers, cascade rules, and RLS policies.  
-5. Document purpose and decisions in `docs/schema/users.md`.
+1. Add partial or covering indexes based on the access pattern.  
+1. Consider table partitioning or sharding if growth demands.  
+1. Review triggers, cascade rules, and RLS policies.  
+1. Document purpose and decisions in `docs/schema/users.md`.
 
 Re-run `just test` and `sqitch verify` after each change.
 
@@ -338,14 +339,16 @@ Regardless of language, keep the database contract authoritative; application mi
 
 ## Example Checklists
 
-**Before Starting**
+### Before Starting
+
 - [ ] Local/Postgres version matches production major/minor.  
 - [ ] Sqitch (or chosen migration tool) initialized with dev/test/prod targets.  
 - [ ] `pgTAP` installed in dev/test databases (`CREATE EXTENSION pgtap`).  
 - [ ] `.env` configured locally; `.env.example` committed.  
 - [ ] Task tracker updated with database work items.  
 
-**Per Feature**
+### Per Feature
+
 - [ ] Failing pgTAP test committed (RED).  
 - [ ] Migration deploy/revert scripts written (GREEN).  
 - [ ] `sqitch verify` + `pg_prove` passing (REFACTOR).  
@@ -353,7 +356,8 @@ Regardless of language, keep the database contract authoritative; application mi
 - [ ] Docs updated (schema diagram, notes).  
 - [ ] Commit created with clear message.  
 
-**After Each Phase**
+### After Each Phase
+
 - [ ] Full pgTAP suite (`just test`).  
 - [ ] Integration fixtures refreshed.  
 - [ ] `sqitch bundle` (optional) ready for deployment artifact.  
@@ -361,7 +365,8 @@ Regardless of language, keep the database contract authoritative; application mi
 - [ ] Extension status confirmed (no superuser surprises).  
 - [ ] Documentation pushed.  
 
-**Session Complete**
+### Session Complete
+
 - [ ] All migrations merged and tagged.  
 - [ ] Production-ready checklists (backups, alerts, HA) reviewed.  
 - [ ] `git status` clean.  

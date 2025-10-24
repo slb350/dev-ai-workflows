@@ -69,6 +69,7 @@ npm pkg get type  # Should output "module"
 ```
 
 **Create Todo List:**
+
 ```typescript
 // Track todos in your preferred tool (TodoWrite, Linear, checklist, etc.):
 // - All major modules/features to implement
@@ -177,6 +178,7 @@ describe('Feature', () => {
 ```
 
 **Run tests to verify they fail:**
+
 ```bash
 npm test -- Feature.test.ts
 # Should see: FAIL (expected, since code doesn't exist yet)
@@ -295,6 +297,7 @@ export const isFeatureError = (error: unknown): error is FeatureError => {
 ```
 
 **Run tests to verify they pass:**
+
 ```bash
 npm test -- Feature.test.ts
 # Should see: PASS
@@ -317,6 +320,7 @@ npm test -- Feature.test.ts
 ```
 
 **Update todo:**
+
 ```typescript
 // Mark current task as completed
 // Mark next task as in_progress
@@ -440,6 +444,7 @@ describe('Service', () => {
 ### Test Coverage Checklist
 
 For each module/class, test:
+
 - ✅ **Happy path** - Normal usage works correctly
 - ✅ **Error handling** - All error scenarios covered
 - ✅ **Edge cases** - Empty inputs, null/undefined, boundary values
@@ -544,7 +549,7 @@ npm run build
 
 ## Project Structure Best Practices
 
-```
+```text
 projectname/
 ├── src/
 │   ├── index.ts                 # Main entry point
@@ -1342,7 +1347,7 @@ describe('Transformer Property Tests', () => {
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) with TypeScript-specific conventions:
 
-```
+```text
 type(scope): Brief description (max 72 chars)
 
 Detailed explanation of what and why:
@@ -1521,6 +1526,7 @@ export async function safeOperation<T>(
 ## Full Session Checklist
 
 **Before Starting:**
+
 - [ ] Node.js and npm installed
 - [ ] TypeScript project initialized
 - [ ] Configuration files set up (tsconfig, jest, eslint, prettier)
@@ -1529,6 +1535,7 @@ export async function safeOperation<T>(
 - [ ] Todo list created with all tasks
 
 **For Each Module/Feature:**
+
 - [ ] Write failing tests (RED)
 - [ ] Verify tests fail
 - [ ] Implement minimum code (GREEN)
@@ -1540,6 +1547,7 @@ export async function safeOperation<T>(
 - [ ] Commit with descriptive message (COMMIT)
 
 **After Each Phase:**
+
 - [ ] Run full test suite: `npm run test:coverage`
 - [ ] All tests passing with good coverage
 - [ ] Type checking: `npm run type-check`
@@ -1550,6 +1558,7 @@ export async function safeOperation<T>(
 - [ ] Push all commits to remote
 
 **Session Complete:**
+
 - [ ] All todos completed
 - [ ] Full test suite passing
 - [ ] Type checking passes without errors
@@ -1784,6 +1793,7 @@ const finalResult = fold(
 ## Anti-Patterns to Avoid
 
 ❌ **DON'T:**
+
 - Use `any` type without justification
 - Ignore TypeScript compilation errors
 - Write tests without proper type checking
@@ -1798,6 +1808,7 @@ const finalResult = fold(
 - Skip documentation for types and interfaces
 
 ✅ **DO:**
+
 - Use specific types and interfaces
 - Let TypeScript catch errors at compile-time
 - Write tests that verify type safety

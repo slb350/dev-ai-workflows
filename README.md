@@ -21,6 +21,7 @@ A comprehensive collection of language-agnostic and language-specific developmen
 ### When to Apply These Workflows
 
 **Automatically suggest or apply when:**
+
 - User requests "create a new [language] project"
 - User asks to "add [feature] following best practices"
 - User says "set up [database] with migrations"
@@ -54,14 +55,17 @@ This repository contains workflow guides that can be mixed and matched based on 
 ## What's Inside
 
 ### Language Development Workflows
+
 Core TDD, linting, formatting, and commit practices for each language:
 
 - **[Python Development Workflow](python-development-workflow.md)** - pytest, black, ruff, uv
 - **[Go Development Workflow](go-development-workflow.md)** - Idiomatic Go, race detection, gofmt
 - **[Rust Development Workflow](rust-development-workflow.md)** - Cargo, fmt, clippy
 - **[TypeScript Development Workflow](typescript-development-workflow.md)** - ESM, pnpm, vitest
+- **[GraphQL Development Workflow](graphql-development-workflow.md)** - Schema-first, Apollo Server, type generation, resolvers
 
 ### Service & Release Workflows
+
 Application-level practices for building production services:
 
 - **[Python Service Workflow](python-service-workflow.md)** - uv packaging, DB integration
@@ -70,17 +74,31 @@ Application-level practices for building production services:
 - **[TypeScript Service Workflow](typescript-service-workflow.md)** - Node services, DB-aware automation
 
 ### Database Workflows
+
 SQL-first migrations, testing, and performance practices:
 
 - **[PostgreSQL Development Workflow](postgresql-development-workflow.md)** - Migrations, pgTAP, performance
 - **[SQLite Development Workflow](sqlite-development-workflow.md)** - Language-neutral migrations, tapsqlite, WAL mode
 
 ### Operations & Infrastructure
+
 Cross-cutting concerns for all projects:
 
 - **[Local Infrastructure Workflow](local-infra-workflow.md)** - Docker Compose for databases and observability
 - **[Observability Workflow](observability-workflow.md)** - Structured logging, metrics, tracing, Grafana
 - **[Schema Documentation Workflow](schema-docs-workflow.md)** - ERDs, markdown docs, schema diffs
+
+### Boilerplates & Starter Templates
+
+Complete stack combinations with integration examples:
+
+- **[FastAPI + GraphQL + SQLite Boilerplate](fastapi-graphql-boilerplate.md)** - Full-stack Python API combining multiple workflows
+
+### Design & Frontend
+
+UI and design system best practices:
+
+- **[Style Guide](style-guide.md)** - Design system, components, accessibility, responsive design
 
 ## Workflow Structure
 
@@ -100,12 +118,14 @@ Each workflow file follows a consistent structure designed for both human and AI
 ### How Workflows Are Organized
 
 **One-time setup (do once per project):**
+
 - Tool installation
 - Project initialization
 - Automation setup (Justfile/Makefile)
 - Configuration files
 
 **Ongoing practices (do repeatedly):**
+
 - TDD cycle for each feature/component
 - Running formatters and linters
 - Commit message format
@@ -120,6 +140,7 @@ Each workflow file follows a consistent structure designed for both human and AI
 **Apply:** Language Workflow + Service Workflow (if applicable) + Database Workflow (if applicable) + Ops Workflows
 
 **Process:**
+
 1. Read all applicable workflow files
 2. Create TodoWrite tasks for one-time setup sections
 3. Execute setup tasks in order
@@ -130,6 +151,7 @@ Each workflow file follows a consistent structure designed for both human and AI
 **Apply:** Relevant Language Workflow (TDD Cycle section only)
 
 **Process:**
+
 1. Reference the TDD cycle from the language workflow
 2. Create TodoWrite tasks for the feature
 3. Follow RED-GREEN-REFACTOR-COMMIT for each component
@@ -140,6 +162,7 @@ Each workflow file follows a consistent structure designed for both human and AI
 **Apply:** Database Workflow + Schema Documentation Workflow
 
 **Process:**
+
 1. Follow database workflow setup sections
 2. Integrate with existing service workflow
 3. Set up migrations and testing
@@ -150,6 +173,7 @@ Each workflow file follows a consistent structure designed for both human and AI
 **Apply:** Service Workflow (deployment sections) + Observability Workflow
 
 **Process:**
+
 1. Reference deployment and testing sections
 2. Configure logging, metrics, tracing
 3. Set up monitoring dashboards
@@ -161,6 +185,7 @@ Each workflow file follows a consistent structure designed for both human and AI
 #### 1. Identify Your Stack
 
 Determine which components your project needs:
+
 - **Language:** Python, Go, Rust, or TypeScript?
 - **Type:** Library, CLI tool, web service, or API?
 - **Database:** PostgreSQL, SQLite, or none?
@@ -172,7 +197,9 @@ Based on your stack, choose workflows:
 
 | Stack | Workflows to Read |
 |-------|------------------|
+| **FastAPI + GraphQL + SQLite** | **[See Boilerplate](fastapi-graphql-boilerplate.md)** - Complete starter template |
 | **Python API + PostgreSQL** | Python Development + Python Service + PostgreSQL + Observability + Local Infra + Schema Docs |
+| **GraphQL API (TypeScript)** | TypeScript Development + GraphQL Development + PostgreSQL + Observability |
 | **Rust CLI + SQLite** | Rust Development + Rust Release + SQLite |
 | **Go Microservice + PostgreSQL** | Go Development + Go Service + PostgreSQL + Observability + Local Infra + Schema Docs |
 | **TypeScript App + SQLite** | TypeScript Development + TypeScript Service + SQLite + Observability + Local Infra |
@@ -181,18 +208,21 @@ Based on your stack, choose workflows:
 #### 3. Read Workflow Files
 
 **For AI Assistants:**
+
 - Read all selected workflow files completely
 - Extract one-time setup tasks vs. ongoing practices
 - Identify tool installation requirements
 - Locate automation templates (Justfiles/Makefiles)
 
 **For Humans:**
+
 - Skim all selected workflows to understand the complete process
 - Bookmark for reference during development
 
 #### 4. Create Todo List
 
 **Use TodoWrite to track:**
+
 - Tool installation tasks
 - Project initialization steps
 - Configuration file creation
@@ -202,6 +232,7 @@ Based on your stack, choose workflows:
 #### 5. Execute One-Time Setup
 
 Work through setup tasks:
+
 1. Install tools (language, test framework, formatters, linters)
 2. Initialize project structure (directories, config files)
 3. Set up automation (Justfile/Makefile)
@@ -212,6 +243,7 @@ Work through setup tasks:
 #### 6. Begin Feature Development
 
 For each feature or component:
+
 1. **RED:** Write failing tests first
 2. **GREEN:** Implement minimum code to pass tests
 3. **REFACTOR:** Clean up code while keeping tests passing
@@ -223,6 +255,7 @@ For each feature or component:
 #### 7. Verify Before Push
 
 Before pushing to remote:
+
 ```bash
 # Run full test suite
 just test  # or make test
@@ -240,7 +273,8 @@ just lint  # or make lint
 ## Example Workflow Combinations
 
 ### Python API with PostgreSQL
-```
+
+```text
 1. python-development-workflow.md
 2. python-service-workflow.md
 3. postgresql-development-workflow.md
@@ -249,15 +283,28 @@ just lint  # or make lint
 6. schema-docs-workflow.md
 ```
 
-### Rust CLI with SQLite
+### GraphQL API with TypeScript and PostgreSQL
+
+```text
+1. typescript-development-workflow.md
+2. graphql-development-workflow.md
+3. postgresql-development-workflow.md
+4. observability-workflow.md
+5. local-infra-workflow.md
+6. schema-docs-workflow.md
 ```
+
+### Rust CLI with SQLite
+
+```text
 1. rust-development-workflow.md
 2. rust-release-workflow.md
 3. sqlite-development-workflow.md
 ```
 
 ### Go Microservice with PostgreSQL
-```
+
+```text
 1. go-development-workflow.md
 2. go-service-workflow.md
 3. postgresql-development-workflow.md
@@ -267,7 +314,8 @@ just lint  # or make lint
 ```
 
 ### TypeScript Full-Stack with SQLite
-```
+
+```text
 1. typescript-development-workflow.md
 2. typescript-service-workflow.md
 3. sqlite-development-workflow.md
@@ -289,7 +337,7 @@ Every workflow in this repository follows these fundamental practices:
 
 All workflows follow this standardized commit message format:
 
-```
+```text
 type(scope): Brief description
 
 Detailed explanation:
@@ -312,6 +360,7 @@ These workflows are designed to work seamlessly with AI assistants like Claude C
 **All workflows expect TodoWrite usage:**
 
 When an AI assistant applies a workflow, it should:
+
 1. Create a TodoWrite list at the start of the project/feature
 2. Break down the workflow into specific, trackable tasks
 3. Mark tasks as `in_progress` before starting work
@@ -319,7 +368,8 @@ When an AI assistant applies a workflow, it should:
 5. Maintain exactly ONE task as `in_progress` at a time
 
 **Example for starting a Python API project:**
-```
+
+```text
 TodoWrite tasks:
 1. Installing Python development tools (status: in_progress)
 2. Setting up project structure (status: pending)
@@ -334,6 +384,7 @@ TodoWrite tasks:
 ### Test-First Prompting
 
 **AI assistants should:**
+
 - Never write implementation code before tests
 - Always follow RED-GREEN-REFACTOR-COMMIT cycle
 - Run tests after each change
@@ -343,6 +394,7 @@ TodoWrite tasks:
 ### Automation-First Approach
 
 **AI assistants should:**
+
 - Set up Justfile/Makefile early in the project
 - Use automation commands (`just test`, `just fmt`, etc.) instead of raw commands
 - Copy automation templates from workflows verbatim
@@ -351,6 +403,7 @@ TodoWrite tasks:
 ### Context Management
 
 **For large projects:**
+
 - Reference workflow files without copying entire contents
 - Extract relevant sections (e.g., "TDD Cycle" for a new feature)
 - Link to specific workflow sections in TodoWrite tasks
@@ -359,6 +412,7 @@ TodoWrite tasks:
 ### Continuous Verification
 
 **After each step, AI assistants should:**
+
 ```bash
 # Verify tests pass
 just test
@@ -373,6 +427,7 @@ just lint
 ```
 
 **If checks fail:**
+
 - Stop and fix issues immediately
 - Do not proceed to next step
 - Mark current task as `in_progress` (not completed)
@@ -383,6 +438,7 @@ just lint
 ### For Human Developers
 
 1. **Clone or star this repository**
+
    ```bash
    git clone https://github.com/slb350/dev-ai-workflows.git
    cd dev-ai-workflows
@@ -408,7 +464,8 @@ When a user asks you to start a new project or feature:
    - "Is this a library, CLI tool, or web service?"
 
 2. **Announce the workflow plan:**
-   ```
+
+   ```text
    "I'll follow these workflows for this Python API project:
    - Python Development Workflow (TDD, formatting, testing)
    - Python Service Workflow (packaging, DB integration)
@@ -433,6 +490,7 @@ When a user asks you to start a new project or feature:
 ### Quick Start Examples
 
 **Starting a new Python API:**
+
 ```bash
 # AI Assistant should:
 1. Read: python-development-workflow.md, python-service-workflow.md, postgresql-development-workflow.md
@@ -444,6 +502,7 @@ When a user asks you to start a new project or feature:
 ```
 
 **Adding a feature to existing Go project:**
+
 ```bash
 # AI Assistant should:
 1. Read: go-development-workflow.md (TDD Cycle section only)
@@ -458,8 +517,8 @@ When a user asks you to start a new project or feature:
 These workflows are living documents. As practices evolve, update the relevant workflow files and commit with clear explanations of what changed and why.
 
 When updating workflows:
+
 - Follow the commit message format above
 - Update related workflows if changes affect multiple guides
 - Note breaking changes in commit messages
 - Keep workflows focused on practices, not tool versions
-

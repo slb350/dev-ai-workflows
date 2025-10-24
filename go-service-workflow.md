@@ -62,7 +62,7 @@ go mod init github.com/you/go-service
 
 Directory layout (recommendation):
 
-```
+```text
 go-service/
 ├── cmd/api/
 │   └── main.go
@@ -271,7 +271,7 @@ func TestRepository_Create(t *testing.T) {
 }
 ```
 
-5. Ensure integration tests clean up by resetting database or using transactions with rollback.
+1. Ensure integration tests clean up by resetting database or using transactions with rollback.
 
 ---
 
@@ -305,6 +305,7 @@ ENTRYPOINT ["./service"]
 ```
 
 **Build with tests:**
+
 ```bash
 # Build and run tests
 docker build --target test -t go-service-test .
@@ -314,6 +315,7 @@ docker build -t go-service:latest .
 ```
 
 **Important:** The `USER nonroot:nonroot` directive is specific to distroless images. If using alpine or debian, use numeric UID/GID:
+
 ```Dockerfile
 USER 65532:65532
 ```
@@ -324,7 +326,7 @@ USER 65532:65532
 
 Create a `.dockerignore` to keep sensitive files and build artifacts out of the image:
 
-```
+```text
 # .dockerignore
 .git/
 .gitignore
@@ -349,6 +351,7 @@ docs/
 ## Checklists
 
 **Daily Commit**  
+
 - [ ] `just check` passes (fmt, lint, vet, race tests).  
 - [ ] Database integration run if schema touched.  
 - [ ] README/ADR updated for new design decisions.  
@@ -356,6 +359,7 @@ docs/
 - [ ] `git status` clean.
 
 **Release**  
+
 - [ ] Binaries built for target platforms.  
 - [ ] Docker image built/pushed.  
 - [ ] Database migrations bunded (`sqitch bundle`).  

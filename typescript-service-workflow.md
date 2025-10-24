@@ -66,7 +66,7 @@ pnpm exec tsc --init --strict --module esnext --moduleResolution node16 --target
 
 ## Project Structure
 
-```
+```text
 ts-service/
 ├── src/
 │   ├── index.ts
@@ -175,7 +175,7 @@ Create `tsconfig.build.json` for production builds (exclude test files).
 
 ## Environment Configuration
 
-```
+```text
 # .env.example
 NODE_ENV=development
 PORT=3000
@@ -276,7 +276,7 @@ afterAll(async () => {
 });
 ```
 
-4. For SQLite, copy the pristine file into temp directories before each test.
+1. For SQLite, copy the pristine file into temp directories before each test.
 
 ---
 
@@ -310,6 +310,7 @@ CMD ["node", "dist/index.js"]
 ## Checklists
 
 **Daily Commit**  
+
 - [ ] `just check` (fmt, lint, typecheck, tests).  
 - [ ] `just db-test` run if schema touched.  
 - [ ] README/docs updated.  
@@ -317,6 +318,7 @@ CMD ["node", "dist/index.js"]
 - [ ] `git status` clean.
 
 **Release**  
+
 - [ ] `pnpm run build` succeeded.  
 - [ ] Docker image built/pushed (if applicable).  
 - [ ] Migrations bundle exported (`sqitch bundle`).  

@@ -156,11 +156,13 @@ directory = "htmlcov"
 ```
 
 **Why these configurations?**
+
 - **pytest importlib mode**: Cleaner imports, no `sys.path` manipulation (pytest recommendation)
 - **Ruff ignore list**: Prevents formatter/linter conflicts (official Ruff guidance)
 - **Coverage fail_under**: Enforces 90% coverage threshold in CI/CD
 
 See:
+
 - [pytest good practices](https://docs.pytest.org/en/stable/explanation/goodpractices.html)
 - [Ruff formatter conflicts](https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules)
 
@@ -211,7 +213,7 @@ Each command prefixes with `dotenv` so `.env` variables load automatically for l
 
 ### 6. Environment configuration
 
-```
+```text
 # .env.example
 LOG_LEVEL=INFO
 APP_ENV=development
@@ -290,10 +292,12 @@ git commit -m "feat: add user service domain validation"
 ## Database Integration
 
 1. Run shared database workflows before integration tests (Postgres or SQLite).  
+
    ```bash
    just db-test
    just integration
    ```
+
 2. Use pytest fixtures to copy the pristine SQLite test file or reset Postgres schema.
 
 ```python
@@ -308,8 +312,8 @@ def sqlite_db(tmp_path_factory):
         conn.close()
 ```
 
-3. For async frameworks (FastAPI/Starlette), use `pytest-asyncio` with `anyio` or `httpx.AsyncClient`.  
-4. Keep ORM usage minimal; prefer raw SQL or lightweight query builders when schema lives in shared SQL migrations.
+1. For async frameworks (FastAPI/Starlette), use `pytest-asyncio` with `anyio` or `httpx.AsyncClient`.  
+1. Keep ORM usage minimal; prefer raw SQL or lightweight query builders when schema lives in shared SQL migrations.
 
 ---
 
@@ -340,7 +344,7 @@ CMD ["python", "-m", "python_service"]
 - Run dependency audits regularly: `uv run pip-audit` (or `uv run safety check`) and fail CI on vulnerabilities.  
 - Keep build contexts lean with a `.dockerignore`:
 
-    ```
+    ```text
     .venv
     __pycache__
     .pytest_cache
@@ -356,14 +360,16 @@ CMD ["python", "-m", "python_service"]
 
 ## Checklists
 
-**Daily Commit**
+### Daily Commit
+
 - [ ] `just check` passes.  
 - [ ] Integration tests run when schema changes.  
 - [ ] Docs/README updated for new features.  
 - [ ] `.env.example` reflects new env vars.  
 - [ ] `git status` clean.
 
-**Release**
+### Release
+
 - [ ] `uv build` artifacts archived.  
 - [ ] Docker image built/pushed (if used).  
 - [ ] Migrations bundled (`sqitch bundle`).  

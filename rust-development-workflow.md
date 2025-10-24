@@ -103,6 +103,7 @@ check:
 ```
 
 **Create Todo List:**
+
 ```rust
 // Track todos in your preferred tool (TodoWrite, Linear, checklist, etc.):
 // - All major modules/features to implement
@@ -225,6 +226,7 @@ mod tests {
 ```
 
 **Run tests to verify they fail:**
+
 ```bash
 cargo test feature_basic_functionship --lib
 # Should see: FAILED (expected, since code doesn't exist yet)
@@ -306,6 +308,7 @@ impl std::fmt::Debug for Feature {
 ```
 
 **Run tests to verify they pass:**
+
 ```bash
 cargo test --lib
 # Should see: test result: ok. X passed
@@ -329,6 +332,7 @@ cargo test --lib
 ```
 
 **Update todo:**
+
 ```rust
 // Mark current task as completed
 // Mark next task as in_progress
@@ -418,6 +422,7 @@ mod tests {
 ### Test Coverage Checklist
 
 For each module/struct, test:
+
 - ✅ **Happy path** - Normal usage works correctly
 - ✅ **Error variants** - All enum variants are covered
 - ✅ **Edge cases** - Empty inputs, boundary values, special cases
@@ -430,11 +435,12 @@ For each module/struct, test:
 
 ### Test Naming Convention
 
-```
+```text
 test_[module]_[functionality]_[scenario]
 ```
 
 Examples:
+
 - `test_feature_process_valid_input`
 - `test_feature_process_empty_input_returns_error`
 - `test_feature_concurrent_access_thread_safe`
@@ -492,7 +498,7 @@ proptest! {
 
 ## Project Structure Best Practices
 
-```
+```text
 projectname/
 ├── src/
 │   ├── lib.rs                 # Library root
@@ -1216,7 +1222,7 @@ proptest! {
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) with Rust-specific conventions:
 
-```
+```text
 type(scope): Brief description (max 72 chars)
 
 Detailed explanation of what and why:
@@ -1250,7 +1256,7 @@ Breaking Changes:
 - `deps:` - Dependency updates
 - `build:` - Build system changes
 - `chore:` - Maintenance tasks
-- ` breaking:` - Breaking changes (use with caution)
+- `breaking:` - Breaking changes (use with caution)
 
 ### Examples
 
@@ -1394,6 +1400,7 @@ impl<T: Send + Sync> Processor<T> {
 ## Full Session Checklist
 
 **Before Starting:**
+
 - [ ] Rust toolchain installed and up to date
 - [ ] Cargo project initialized with proper dependencies
 - [ ] Development tools installed (cargo-watch, cargo-audit, etc.)
@@ -1401,6 +1408,7 @@ impl<T: Send + Sync> Processor<T> {
 - [ ] Todo list created with all tasks
 
 **For Each Module/Feature:**
+
 - [ ] Write failing tests (RED)
 - [ ] Verify tests fail
 - [ ] Implement minimum code (GREEN)
@@ -1412,6 +1420,7 @@ impl<T: Send + Sync> Processor<T> {
 - [ ] Commit with descriptive message (COMMIT)
 
 **After Each Phase:**
+
 - [ ] Run full test suite: `cargo nextest run --all-features`
 - [ ] All tests passing
 - [ ] Linting clean: `cargo clippy -- -D warnings`
@@ -1423,6 +1432,7 @@ impl<T: Send + Sync> Processor<T> {
 - [ ] Push all commits to remote
 
 **Session Complete:**
+
 - [ ] All todos completed
 - [ ] Full test suite passing
 - [ ] Benchmarks acceptable
@@ -1546,6 +1556,7 @@ perf report
 ## Anti-Patterns to Avoid
 
 ❌ **DON'T:**
+
 - Write production code without tests first
 - Use `.unwrap()` in production code (use proper error handling)
 - Ignore clippy warnings without justification
@@ -1561,6 +1572,7 @@ perf report
 - Use blocking operations in async contexts
 
 ✅ **DO:**
+
 - Write tests before implementation (TDD)
 - Use `Result` for error handling
 - Address clippy warnings or document why they're suppressed

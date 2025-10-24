@@ -32,7 +32,7 @@ This workflow uses Docker Compose (or Podman Compose) plus Make/Just automation 
 
 ## Repository Layout
 
-```
+```text
 infrastructure/
 ├── docker-compose.yml
 ├── .env.example
@@ -54,7 +54,7 @@ Each application repository can submodule or copy this structure, or you can kee
 
 ## Environment Configuration
 
-```
+```text
 # .env.example
 POSTGRES_PORT=5432
 POSTGRES_USER=postgres
@@ -260,6 +260,7 @@ This spins up language toolchains alongside your infrastructure.
 ## Checklists
 
 **Before Working**  
+
 - [ ] `just up` brings everything online.  
 - [ ] Grafana accessible at <http://localhost:${GRAFANA_PORT}>.  
 - [ ] `sqitch verify` passes.  
@@ -267,11 +268,13 @@ This spins up language toolchains alongside your infrastructure.
 - [ ] Observability endpoints reachable (Prometheus, Loki).
 
 **Before Commit**  
+
 - [ ] Infrastructure docs updated if services change.  
 - [ ] `.env.example` reflects new services/ports.  
 - [ ] `just down` (optional) to avoid battery drain when done.
 
 **Project Onboarding**  
+
 - [ ] README explains how to run `just up`.  
 - [ ] Service-specific environment variables documented.  
 - [ ] Database migrations included in repo submodule or instructions to fetch from workflows.

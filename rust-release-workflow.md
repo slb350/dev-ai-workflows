@@ -71,7 +71,7 @@ targets = ["aarch64-apple-darwin", "x86_64-unknown-linux-gnu"]
 
 ## Project Layout
 
-```
+```text
 rust-app/
 ├── Cargo.toml
 ├── Cargo.lock
@@ -240,6 +240,7 @@ gpg --armor --detach-sign dist/SHA256SUMS
 ## Checklists
 
 **Daily Commit**  
+
 - [ ] `just check` passes (fmt, clippy, tests).  
 - [ ] `just db-test` run if schema touched.  
 - [ ] Docs updated (README, docs/architecture.md).  
@@ -247,6 +248,7 @@ gpg --armor --detach-sign dist/SHA256SUMS
 - [ ] `git status` clean.
 
 **Pre-Release**  
+
 - [ ] `just check` + `just nextest`.  
 - [ ] `cargo llvm-cov` (optional) meets threshold.  
 - [ ] Benchmarks captured and compared.  

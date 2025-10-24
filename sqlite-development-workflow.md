@@ -50,7 +50,7 @@ mkdir sqlite-project && cd sqlite-project
 git init
 ```
 
-```
+```text
 sqlite-project/
 ├── db/
 │   ├── sqitch.conf
@@ -75,7 +75,7 @@ sqlite-project/
 
 ### 2. Manage environment configuration safely
 
-```
+```text
 # .env.example
 SQLITE_DB_PATH=data/dev.sqlite
 SQLITE_TEST_DB_PATH=data/test.sqlite
@@ -85,6 +85,7 @@ SQLITE_CACHE_SIZE=-2000  # Pages (~page_size * value). Negative => KB.
 ```
 
 **About SYNCHRONOUS setting:**
+
 - **NORMAL** (default for WAL): Provides atomic, consistent, isolated transactions. Loses durability across power loss but safe for most applications.
 - **FULL**: Adds fsync after every transaction for power-loss durability. Use only if your application absolutely requires surviving mid-transaction power failures.
 - See: [SQLite PRAGMA synchronous](https://sqlite.org/pragma.html#pragma_synchronous)
@@ -232,7 +233,7 @@ done
 
 Add to `db/sqitch.plan`:
 
-```
+```text
 @users-schema 2025-10-17T14:00:00Z you@example.com # Create users table
 ```
 
@@ -291,13 +292,13 @@ SELECT 'user' || x || '@example.com', 'User ' || x FROM cnt;
 SQL
 ```
 
-2. Analyze query plans:
+1. Analyze query plans:
 
 ```bash
 sqlite3 "$SQLITE_TEST_DB_PATH" "EXPLAIN QUERY PLAN SELECT * FROM users WHERE email = 'user2500@example.com';"
 ```
 
-3. Add indexes or partial indexes accordingly. Re-run tests and capture notes in `docs/schema/users.md`.
+1. Add indexes or partial indexes accordingly. Re-run tests and capture notes in `docs/schema/users.md`.
 
 ### Step 4: COMMIT
 
@@ -339,6 +340,7 @@ git commit -m "feat(db): add users schema with audit trigger"
 ## Checklists
 
 **Before Starting**  
+
 - [ ] `sqlite3 --version` matches production.  
 - [ ] `.env` configured with `dev` and `test` database paths.  
 - [ ] Sqitch (or chosen migration tool) initialized.  
@@ -346,6 +348,7 @@ git commit -m "feat(db): add users schema with audit trigger"
 - [ ] Task tracker updated with work items.  
 
 **Per Feature**  
+
 - [ ] Failing tests committed (RED).  
 - [ ] Migration + revert scripts written (GREEN).  
 - [ ] Tests passing (`just test`).  
@@ -354,6 +357,7 @@ git commit -m "feat(db): add users schema with audit trigger"
 - [ ] Commit created.  
 
 **After Each Phase**  
+
 - [ ] Full test suite (`just test`).  
 - [ ] Schema diff reviewed (`sqldiff`).  
 - [ ] Backups refreshed (`scripts/backup.sh`).  
@@ -361,6 +365,7 @@ git commit -m "feat(db): add users schema with audit trigger"
 - [ ] Tracker updated.  
 
 **Session Complete**  
+
 - [ ] Migrations tagged for release.  
 - [ ] Baseline SQLite file backed up with checksum.  
 - [ ] Deployment instructions documented.  

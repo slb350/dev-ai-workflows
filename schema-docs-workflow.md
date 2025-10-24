@@ -32,7 +32,7 @@ Schema documentation tends to rot unless it’s baked into the workflow. This gu
 
 ## Directory Structure
 
-```
+```text
 docs/
 ├── schema/
 │   ├── README.md
@@ -204,7 +204,7 @@ CREATE TABLE users (...);
 
 ## Rollback
 
-```
+```text
 DROP TABLE users;
 ```
 
@@ -213,7 +213,8 @@ DROP TABLE users;
 - Rationale: unify user identity across services.  
 - Impact on services: Python (write), Go (read), TypeScript (auth).  
 - Observability: add metrics for user creation rate.
-```
+
+```text
 
 ---
 
@@ -303,6 +304,7 @@ Keep baseline files updated whenever production schema changes.
 ## Checklists
 
 **Before Merging Schema Changes**  
+
 - [ ] Docs for affected tables/views updated.  
 - [ ] ERD regenerated.  
 - [ ] Migration doc created with rationale/rollback.  
@@ -311,6 +313,7 @@ Keep baseline files updated whenever production schema changes.
 - [ ] README schema overview updated if new components added.
 
 **Monthly Maintenance**  
+
 - [ ] Review docs for accuracy vs. actual schema.  
 - [ ] Ensure ERD images render in GitHub/Gitea.  
 - [ ] Remove outdated tables/columns from docs.  
@@ -401,7 +404,7 @@ liam build schema.json --format tbls --output docs/schema/erd
 
 [dbdiagram.io](https://dbdiagram.io/) lets you define schema in a DSL and export SQL:
 
-```
+```text
 // Define schema in .dbml format
 Table users {
   id uuid [pk]

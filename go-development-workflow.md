@@ -76,6 +76,7 @@ tools:
 **Note:** golangci-lint recommends binary installation over `go install` for reliability. See their [installation docs](https://golangci-lint.run/welcome/install/) for details.
 
 **Create Todo List:**
+
 ```go
 // Track todos in your preferred tool (TodoWrite, Linear, checklist, etc.):
 // - All major packages/features to implement
@@ -189,6 +190,7 @@ func TestFeatureTableDriven(t *testing.T) {
 ```
 
 **Run tests to verify they fail:**
+
 ```bash
 go test ./pkgname -v -run TestFeatureBasicFunctionality
 # Should see: FAIL (expected, since code doesn't exist yet)
@@ -247,6 +249,7 @@ func (f *Feature) GetState() string {
 ```
 
 **Run tests to verify they pass:**
+
 ```bash
 go test ./pkgname -v
 # Should see: PASS
@@ -266,6 +269,7 @@ go test ./pkgname -v
 ```
 
 **Update todo:**
+
 ```go
 // Mark current task as completed
 // Mark next task as in_progress
@@ -356,6 +360,7 @@ func TestFeature_AsyncBehavior(t *testing.T) {
 ### Test Coverage Checklist
 
 For each package/component, test:
+
 - ✅ **Happy path** - Normal usage works correctly
 - ✅ **Edge cases** - Empty inputs, boundary values, special cases
 - ✅ **Error handling** - Invalid inputs return appropriate errors
@@ -407,11 +412,12 @@ func TestService_ProcessCancellation(t *testing.T) {
 
 ### Test Naming Convention
 
-```
+```text
 Test[Type]_[Method]_[Behavior]_[Condition]
 ```
 
 Examples:
+
 - `TestFeature_Method_ValidInput`
 - `TestFeature_Method_EmptyInput_ReturnsError`
 - `TestFeature_AsyncMethod_ConcurrentAccess`
@@ -452,7 +458,7 @@ func BenchmarkFeature_Concurrent(b *testing.B) {
 
 ## Project Structure Best Practices
 
-```
+```text
 projectname/
 ├── cmd/                    # Main applications
 │   ├── server/
@@ -712,7 +718,7 @@ EOF
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) with Go-specific conventions:
 
-```
+```text
 type(scope): Brief description (max 72 chars)
 
 Detailed explanation of what and why:
@@ -859,12 +865,14 @@ func NewService(config Config) (*Service, error) {
 ## Full Session Checklist
 
 **Before Starting:**
+
 - [ ] Go module initialized
 - [ ] Development tools installed
 - [ ] Environment verified (go version, module tidy)
 - [ ] Todo list created with all tasks
 
 **For Each Package/Feature:**
+
 - [ ] Write failing tests (RED)
 - [ ] Verify tests fail
 - [ ] Implement minimum code (GREEN)
@@ -875,6 +883,7 @@ func NewService(config Config) (*Service, error) {
 - [ ] Commit with descriptive message (COMMIT)
 
 **After Each Phase:**
+
 - [ ] Run full test suite: `go test -v -race ./...`
 - [ ] All tests passing
 - [ ] Code formatted: `goimports -w .`
@@ -885,6 +894,7 @@ func NewService(config Config) (*Service, error) {
 - [ ] Push all commits to remote
 
 **Session Complete:**
+
 - [ ] All todos completed
 - [ ] Full test suite passing with race detection
 - [ ] Benchmarks acceptable
@@ -997,6 +1007,7 @@ go tool pprof mem.prof
 ## Anti-Patterns to Avoid
 
 ❌ **DON'T:**
+
 - Write production code without tests first
 - Skip race detection in tests
 - Ignore golint/golangci-lint warnings
@@ -1011,6 +1022,7 @@ go tool pprof mem.prof
 - Use global variables for configuration
 
 ✅ **DO:**
+
 - Write tests before implementation (TDD)
 - Always run tests with `-race` flag
 - Address all linting warnings

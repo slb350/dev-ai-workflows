@@ -45,6 +45,7 @@ uv run python -c "import your_package"
 Note: Keep development tooling in `[project.optional-dependencies]` and `[tool.uv]` so `uv sync` stays the single source of truth. Regenerate the lockfile with `uv lock` when dependencies change and commit `uv.lock` to guarantee reproducible installs (`uv sync --frozen` enforces the lock in CI).
 
 **Create Todo List:**
+
 ```python
 # Track todos in your preferred tool (TodoWrite, Linear, checklist, etc.):
 # - All major sections/features to implement
@@ -84,6 +85,7 @@ def test_feature_edge_case():
 ```
 
 **Run tests to verify they fail:**
+
 ```bash
 pytest tests/unit/test_[feature].py::test_feature_basic_functionality -v
 # Should see: FAILED (expected, since code doesn't exist yet)
@@ -121,6 +123,7 @@ class FeatureClass:
 ```
 
 **Run tests to verify they pass:**
+
 ```bash
 pytest tests/unit/test_[feature].py -v
 # Should see: X passed
@@ -143,6 +146,7 @@ uv run pytest tests/unit/test_[feature].py -v
 ```
 
 **Update todo:**
+
 ```python
 # Mark current task as completed
 # Mark next task as in_progress
@@ -217,6 +221,7 @@ async def test_[component]_async_behavior():
 ### Test Coverage Checklist
 
 For each component, test:
+
 - ✅ **Happy path** - Normal usage works correctly
 - ✅ **Edge cases** - Empty inputs, boundary values, special cases
 - ✅ **Error handling** - Invalid inputs raise appropriate exceptions
@@ -226,11 +231,12 @@ For each component, test:
 
 ### Test Naming Convention
 
-```
+```text
 test_[component]_[behavior]_[condition]
 ```
 
 Examples:
+
 - `test_parser_finds_typo()`
 - `test_parser_ignores_urls()`
 - `test_parser_handles_empty_input()`
@@ -242,7 +248,7 @@ Examples:
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 type(scope): Brief description (max 72 chars)
 
 Detailed explanation of what and why:
@@ -258,6 +264,7 @@ Testing:
 ```
 
 ### Commit Types
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation only
@@ -394,6 +401,7 @@ testpaths = ["tests"]
 ```
 
 **Why importlib mode?**
+
 - Cleaner: No `sys.path` manipulation
 - Safer: Avoids name collisions between test modules
 - Modern: Recommended for all new projects by pytest team
@@ -465,7 +473,7 @@ This ensures `pytest --cov --cov-fail-under=80` will fail if coverage drops belo
 
 ## Project Structure Best Practices
 
-```
+```text
 your_package/
 ├── __init__.py
 ├── models/              # Data models (Pydantic, SQLAlchemy)
@@ -501,12 +509,14 @@ tests/
 ## Full Session Checklist
 
 **Before Starting:**
+
 - [ ] Virtual environment activated
 - [ ] Dependencies installed
 - [ ] Environment verified (imports work)
 - [ ] Todo list created with all tasks
 
 **For Each Feature:**
+
 - [ ] Write failing tests (RED)
 - [ ] Verify tests fail
 - [ ] Implement minimum code (GREEN)
@@ -516,6 +526,7 @@ tests/
 - [ ] Commit with descriptive message (COMMIT)
 
 **After Each Phase:**
+
 - [ ] Run full test suite with coverage gate: `uv run pytest tests/unit/ --cov=your_package --cov-report=term-missing --cov-fail-under=90`
 - [ ] All tests passing
 - [ ] Code formatted and linted: `uv run ruff check . --fix && uv run ruff format .`
@@ -525,6 +536,7 @@ tests/
 - [ ] Push all commits to remote
 
 **Session Complete:**
+
 - [ ] All todos completed
 - [ ] Full test suite passing
 - [ ] Documentation updated
@@ -570,6 +582,7 @@ git push
 ## Anti-Patterns to Avoid
 
 ❌ **DON'T:**
+
 - Write production code without tests first
 - Skip running tests after changes
 - Commit code that doesn't pass tests
@@ -580,6 +593,7 @@ git push
 - Batch multiple features in one commit
 
 ✅ **DO:**
+
 - Write tests before implementation (TDD)
 - Run tests frequently (after every change)
 - Only commit passing code

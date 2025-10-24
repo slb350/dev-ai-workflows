@@ -73,7 +73,7 @@ Use middleware/interceptors to add trace IDs automatically.
 
 ## Environment Variables
 
-```
+```text
 # .env.example additions
 OTEL_SERVICE_NAME=python-service
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
@@ -203,7 +203,7 @@ await sdk.start();
 
 Provision Grafana dashboards automatically:
 
-```
+```text
 config/grafana/provisioning/dashboards/services.yml
 config/grafana/dashboards/python-service.json
 config/grafana/dashboards/go-service.json
@@ -237,13 +237,16 @@ groups:
 ## Testing Observability
 
 1. **Logs**: Run a service endpoint, verify JSON logs appear in Loki:
+
    ```bash
    docker compose logs -f service | jq
    curl "http://localhost:3100/loki/api/v1/query?query={service=\"python-service\"}"
    ```
+
 2. **Metrics**: `curl http://localhost:9464/metrics` (service) and check Prometheus UI.  
 3. **Traces**: Trigger request, open Grafana Tempo explore, confirm spans present.  
 4. **End-to-End Smoke** (Justfile target):
+
    ```just
    obs-smoke:
    	curl -fsS http://localhost:9464/metrics | head
@@ -256,6 +259,7 @@ groups:
 ## Checklists
 
 **Before Running Services**  
+
 - [ ] `just up` from Local Infra workflow.  
 - [ ] Grafana dashboards provisioned (check UI).  
 - [ ] Environment variables set for OTEL and Prometheus ports.  
@@ -263,6 +267,7 @@ groups:
 - [ ] Sampling rate verified (OTEL_TRACES_SAMPLER_ARG).
 
 **Before Release**  
+
 - [ ] Observability docs updated (what metrics to watch).  
 - [ ] Alerts tuned (if using Prometheus Alertmanager).  
 - [ ] Dashboards exported to repo (`grafana dashboards export`).  
