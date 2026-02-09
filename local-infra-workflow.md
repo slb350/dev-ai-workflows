@@ -1,7 +1,7 @@
 # Local Infrastructure Workflow - Reproducible Dev Environments
 
-**Version:** 1.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.0
+**Last Updated:** 2026-02-09
 **Purpose:** Stand up and manage consistent local infrastructure (databases, message brokers, observability stack) for your side projects, aligned with the SQL-first workflows and multi-language services.
 
 ---
@@ -82,10 +82,12 @@ Copy to `.env` and adjust per machine. Projects load from this environment file 
 ## Docker Compose (example)
 
 ```yaml
-version: "3.9"
+# Note: The top-level `version` field is obsolete and generates a warning.
+# Docker Compose always uses the latest schema. See:
+# https://docs.docker.com/reference/compose-file/version-and-name/
 services:
   postgres:
-    image: postgres:16
+    image: postgres:17
     ports:
       - "${POSTGRES_PORT}:5432"
     environment:
@@ -107,13 +109,13 @@ services:
       - "${REDIS_PORT}:6379"
 
   sqlite:
-    image: keinos/sqlite3:3.45
+    image: keinos/sqlite3:latest
     entrypoint: ["tail", "-f", "/dev/null"]
     volumes:
       - ${SQLITE_DATA_DIR}:/data
 
   grafana:
-    image: grafana/grafana:10
+    image: grafana/grafana:12
     ports:
       - "${GRAFANA_PORT}:3000"
     environment:
@@ -124,21 +126,21 @@ services:
       - ./config/grafana:/etc/grafana/provisioning
 
   prometheus:
-    image: prom/prometheus:v2.52.0
+    image: prom/prometheus:v3.5.1
     ports:
       - "${PROMETHEUS_PORT}:9090"
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   loki:
-    image: grafana/loki:3.0.0
+    image: grafana/loki:3.6
     ports:
       - "${LOKI_PORT}:3100"
     volumes:
       - ./config/loki/config.yml:/etc/loki/config.yml
 
   tempo:
-    image: grafana/tempo:2.4.1
+    image: grafana/tempo:2.10
     ports:
       - "${TEMPO_PORT}:4317"
 
@@ -149,36 +151,37 @@ volumes:
 
 Add other services (RabbitMQ, MinIO) as needed.
 
+> **Prometheus 3.x note:** Prometheus 3.0 (released November 2024) includes a new UI, OTLP native ingestion (`/api/v1/otlp/v1/metrics`), Remote Write 2.0, and UTF-8 metric/label name support. Review the [migration guide](https://prometheus.io/docs/prometheus/3.0/migration/) before upgrading from 2.x. See [Prometheus 3.0 announcement](https://prometheus.io/blog/2024/11/14/prometheus-3-0/).
+
 ---
 
 ## Automation (`justfile`)
 
 ```just
 set shell := ["bash", "-c"]
-
-dotenv := "set -a && source .env && set +a"
+set dotenv-load := true
 
 alias ci := check
 
 up:
-	{{dotenv}} && docker compose up -d
+	docker compose up -d
 	./scripts/wait-for-service.sh postgres ${POSTGRES_PORT}
 
 down:
-	{{dotenv}} && docker compose down
+	docker compose down
 
 logs:
-	{{dotenv}} && docker compose logs -f --tail=200
+	docker compose logs -f --tail=200
 
 ps:
-	{{dotenv}} && docker compose ps
+	docker compose ps
 
 reset-pg:
-	{{dotenv}} && docker compose stop postgres && docker compose rm -f postgres && rm -rf postgres-data
+	docker compose stop postgres && docker compose rm -f postgres && rm -rf postgres-data
 	just up
 
 sqitch:
-	{{dotenv}} && sqitch deploy --target dev
+	sqitch deploy --target dev
 
 db-test:
 	./scripts/migrate-postgres.sh && ./scripts/seed-sqlite.sh

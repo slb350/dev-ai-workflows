@@ -1,7 +1,7 @@
 # Observability Workflow - Logs, Metrics, Traces for Side Projects
 
-**Version:** 1.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.0
+**Last Updated:** 2026-02-09
 **Purpose:** A pragmatic observability blueprint suited for solo/side projects across Python, Go, Rust, and TypeScript services.
 
 ---
@@ -40,6 +40,10 @@ This workflow keeps your observability stack lean but effective:
 | Traces | OTLP exporters per language | Grafana Tempo | Jaeger is an alternative. |
 | Visualization | Grafana | `http://localhost:3001` (per local infra) | Provision dashboards for each service. |
 | Alerts | Prometheus Alertmanager (optional) | Email/Slack (if configured) | Start with simple thresholds (error rate, latency). |
+
+> **Grafana Agent EOL (November 2025):** Grafana Agent reached end-of-life on November 1, 2025. If you were using Grafana Agent as a collector/forwarder, migrate to **Grafana Alloy**, its successor. Alloy uses the same configuration format as Agent Flow mode with minor changes (classic modules replaced by `import.*` blocks). See [Grafana Alloy migration guide](https://grafana.com/docs/alloy/latest/set-up/migrate/from-flow/).
+
+> **Prometheus 3.x:** Prometheus 3.0 (released November 2024) adds native OTLP ingestion (`/api/v1/otlp/v1/metrics`), meaning services can send metrics directly to Prometheus via OTLP without a separate collector. This simplifies the stack for projects that don't need Grafana Alloy as an intermediary. See [Prometheus OTEL guide](https://prometheus.io/docs/guides/opentelemetry).
 
 ---
 
@@ -180,7 +184,7 @@ Expose metrics via `axum-prometheus` or `metrics-exporter-prometheus`.
 
 ```ts
 import pino from 'pino';
-import { PrometheusClient } from '@opentelemetry/sdk-metrics';
+import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
 const logger = pino({
@@ -189,13 +193,16 @@ const logger = pino({
 });
 
 const sdk = new NodeSDK({
-  metricReader: new PrometheusClient({
-    endpoint: `/metrics`,
+  metricReader: new PrometheusExporter({
     port: Number(process.env.PROMETHEUS_SCRAPE_PORT ?? 9464),
   }),
 });
-await sdk.start();
+sdk.start();
 ```
+
+**Source:** [OpenTelemetry JS Prometheus Exporter](https://opentelemetry.io/docs/languages/js/exporters/#prometheus-dependencies)
+
+> **Note:** Install `@opentelemetry/exporter-prometheus` (not `@opentelemetry/sdk-metrics`). The `PrometheusExporter` starts an HTTP server on the configured port, exposing metrics at `/metrics`.
 
 ---
 
@@ -307,6 +314,8 @@ groups:
 | Grafana dashboards missing | Check provisioning logs (`docker compose logs grafana`). |
 | Metrics names mismatch | Align names/labels across languages, update dashboards. |
 | High cardinality | Avoid identifiers in labels (use IDs in logs, not metrics). |
+| Grafana Agent deprecated | Grafana Agent reached EOL Nov 2025. Migrate to Grafana Alloy. |
+| Prometheus 2.x → 3.x | Review [migration guide](https://prometheus.io/docs/prometheus/3.0/migration/). Some config and feature flag changes. |
 
 ---
 
