@@ -1,7 +1,7 @@
 # TypeScript Development Workflow - TDD Best Practices
 
-**Version:** 1.0
-**Last Updated:** 2025-10-17
+**Version:** 2.0
+**Last Updated:** 2026-02-09
 **Purpose:** Stellar workflow for TypeScript development with comprehensive test coverage, type safety, and modern JavaScript ecosystem integration
 
 ---
@@ -33,10 +33,12 @@ This workflow prioritizes **type safety**, **maintainability**, and **developer 
 # 1. Initialize project
 npm init -y
 npm pkg set type=module
-npm install typescript@5.4.5 @types/node@20.12.7 --save-dev --save-exact
+npm install typescript@5.9 @types/node@22 --save-dev --save-exact
 
 # 2. Initialize TypeScript configuration (ESM + modern defaults)
-npx tsc --init --strict --module esnext --moduleResolution node16 --target es2022 --outDir dist --rootDir src --resolveJsonModule --noEmitOnError --esModuleInterop
+# Note: TypeScript 5.9 `tsc --init` produces a minimal tsconfig by default.
+# Use --module node20 for stable Node.js module resolution (TS 5.9+).
+npx tsc --init --strict --module node20 --target es2022 --outDir dist --rootDir src --resolveJsonModule --noEmitOnError
 
 # 3. Set up project structure
 mkdir -p src tests
@@ -44,26 +46,30 @@ mkdir -p src/{components,services,utils,types}
 mkdir -p tests/{unit,integration}
 
 # 4. Install development dependencies
+# Vitest is the recommended test runner for TypeScript ESM projects.
+# ESLint 10 uses flat config (eslint.config.mjs) exclusively.
+# The unified `typescript-eslint` package replaces the separate plugin + parser.
 npm install --save-dev --save-exact \
-  jest@29.7.0 \
-  @types/jest@29.5.12 \
-  ts-jest@29.1.2 \
-  eslint@8.57.0 \
-  @typescript-eslint/eslint-plugin@7.8.0 \
-  @typescript-eslint/parser@7.8.0 \
-  prettier@3.2.5 \
-  prettier-plugin-organize-imports@3.4.2 \
-  husky@9.0.11 \
-  lint-staged@15.2.3 \
-  nodemon@3.1.0 \
-  concurrently@8.2.2
+  vitest@4 \
+  @vitest/coverage-v8 \
+  eslint@10 \
+  @eslint/js \
+  typescript-eslint \
+  eslint-config-prettier \
+  prettier@3 \
+  prettier-plugin-organize-imports \
+  husky@9 \
+  lint-staged@15 \
+  tsx
 
-# (Using pnpm? mirror these commands with `pnpm add --save-dev --save-exact ...`. Enable Corepack if needed: `corepack enable`.)
+# (Using pnpm? Use `pnpm add --save-dev ...`. Enable Corepack: `corepack enable`.)
+# pnpm v10 note: Lifecycle scripts are blocked by default for security.
+# Add packages that need build scripts to pnpm.onlyBuiltDependencies in package.json.
 
 # 5. Verify environment (after scripts configured below)
-npx tsc --version
-npx jest --version
-npm pkg get type  # Should output "module"
+npx tsc --version   # Should show 5.9.x
+npx vitest --version # Should show 4.x
+npm pkg get type    # Should output "module"
 
 # After defining npm scripts (see below), run `npm run build` once to ensure compilation succeeds.
 ```
@@ -84,7 +90,7 @@ npm pkg get type  # Should output "module"
 ```typescript
 // Create test file: tests/unit/Feature.test.ts
 import { Feature, FeatureError } from '../../src/services/Feature';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('Feature', () => {
   let feature: Feature;
@@ -180,7 +186,7 @@ describe('Feature', () => {
 **Run tests to verify they fail:**
 
 ```bash
-npm test -- Feature.test.ts
+npx vitest run Feature.test.ts
 # Should see: FAIL (expected, since code doesn't exist yet)
 ```
 
@@ -299,7 +305,7 @@ export const isFeatureError = (error: unknown): error is FeatureError => {
 **Run tests to verify they pass:**
 
 ```bash
-npm test -- Feature.test.ts
+npx vitest run Feature.test.ts
 # Should see: PASS
 ```
 
@@ -316,7 +322,7 @@ npm run lint:fix
 npm run type-check
 
 # Verify tests still pass after refactoring
-npm test -- Feature.test.ts
+npx vitest run Feature.test.ts
 ```
 
 **Update todo:**
@@ -361,7 +367,7 @@ services/Feature implementation complete."
 // tests/unit/Service.test.ts
 import { Service, ServiceConfig } from '../../src/services/Service';
 import { MockLogger, MockDatabase } from '../mocks';
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('Service', () => {
   let service: Service;
@@ -379,7 +385,7 @@ describe('Service', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('processData', () => {
@@ -481,10 +487,10 @@ import { Logger } from '../../src/types/Logger';
 
 export class MockLogger implements Logger {
   public logs: Array<{ level: string; message: string; meta?: any }> = [];
-  public error = jest.fn();
-  public warn = jest.fn();
-  public info = jest.fn();
-  public debug = jest.fn();
+  public error = vi.fn();
+  public warn = vi.fn();
+  public info = vi.fn();
+  public debug = vi.fn();
 
   constructor() {
     this.error.mockImplementation((message: string, meta?: any) => {
@@ -503,7 +509,7 @@ export class MockLogger implements Logger {
 
   public clear(): void {
     this.logs = [];
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   }
 }
 
@@ -513,10 +519,10 @@ import { User } from '../../src/types/User';
 
 export class MockDatabase implements Database {
   public users = new Map<string, User>();
-  public get = jest.fn();
-  public save = jest.fn();
-  public delete = jest.fn();
-  public find = jest.fn();
+  public get = vi.fn();
+  public save = vi.fn();
+  public delete = vi.fn();
+  public find = vi.fn();
 
   constructor() {
     this.get.mockImplementation(async (id: string) => {
@@ -534,7 +540,7 @@ export class MockDatabase implements Database {
 
   public clear(): void {
     this.users.clear();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   }
 }
 ```
@@ -588,7 +594,7 @@ projectname/
 │       ├── errors.ts
 │       └── config.ts
 ├── tests/
-│   ├── setup.ts                 # Jest setup
+│   ├── setup.ts                 # Vitest setup
 │   ├── mocks/                   # Mock implementations
 │   │   ├── Logger.mock.ts
 │   │   └── Database.mock.ts
@@ -609,8 +615,8 @@ projectname/
 │       └── ci.yml
 ├── package.json
 ├── tsconfig.json
-├── jest.config.js
-├── .eslintrc.js
+├── vitest.config.ts
+├── eslint.config.mjs
 ├── .prettierrc
 ├── .gitignore
 └── README.md
@@ -864,8 +870,8 @@ const flatMap = <T, R>(option: Option<T>, fn: (value: T) => Option<R>): Option<R
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node16",
+    "module": "node20",
+    "moduleResolution": "node20",
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -905,94 +911,110 @@ const flatMap = <T, R>(option: Option<T>, fn: (value: T) => Option<R>): Option<R
 }
 ```
 
-### Jest Configuration
+### Vitest Configuration
 
-```javascript
-// jest.config.js
-import type { Config } from 'jest';
+Vitest is the recommended test runner for TypeScript ESM projects. It provides native ESM support, TypeScript transformation via Vite, and a Jest-compatible API.
 
-const config: Config = {
-  preset: 'ts-jest/presets/default-esm',
-  testEnvironment: 'node',
-  extensionsToTreatAsEsm: ['.ts'],
-  roots: ['<rootDir>/src', '<rootDir>/tests'],
-  testMatch: [
-    '**/__tests__/**/*.ts',
-    '**/?(*.)+(spec|test).ts'
-  ],
-  globals: {
-    'ts-jest': {
-      tsconfig: './tsconfig.json',
-      useESM: true
-    }
+**Source:** [Vitest Getting Started](https://vitest.dev/guide/)
+
+```typescript
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    globals: false,
+    environment: 'node',
+    include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
+    setupFiles: ['tests/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      // Vitest 4: coverage.all was removed. Define coverage.include explicitly.
+      // Source: https://vitest.dev/guide/migration#vitest-4
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.d.ts', 'src/index.ts'],
+      reporter: ['text', 'lcov', 'html'],
+      thresholds: {
+        statements: 90,
+        branches: 85,
+        functions: 90,
+        lines: 90,
+      },
+    },
+    // Vitest 4: maxThreads/maxForks replaced with maxWorkers
+    // Source: https://vitest.dev/guide/migration#pool-rework
+    maxWorkers: '50%',
+    restoreMocks: true,
+    clearMocks: true,
   },
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/index.ts',
-  ],
-  coverageDirectory: 'coverage',
-  coverageReporters: [
-    'text',
-    'lcov',
-    'html'
-  ],
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@tests/(.*)$': '<rootDir>/tests/$1',
+  resolve: {
+    alias: {
+      '@': new URL('./src', import.meta.url).pathname,
+      '@tests': new URL('./tests', import.meta.url).pathname,
+    },
   },
-  clearMocks: true,
-  restoreMocks: true,
-  resetMocks: true,
-};
-
-export default config;
+});
 ```
+
+> **Migrating from Jest?** Vitest provides a Jest-compatible API. Replace `jest.fn()` with `vi.fn()`, `jest.mock()` with `vi.mock()`, and import test utilities from `'vitest'` instead of `'@jest/globals'`. See [Vitest Migration Guide](https://vitest.dev/guide/migration#jest).
 
 ### ESLint Configuration
 
+ESLint 10 exclusively uses flat config (`eslint.config.mjs`). The legacy `.eslintrc.*` format is no longer supported. The unified `typescript-eslint` package replaces the separate `@typescript-eslint/parser` and `@typescript-eslint/eslint-plugin` packages.
+
+**Source:** [typescript-eslint Getting Started](https://typescript-eslint.io/getting-started/) | [ESLint Flat Config](https://eslint.org/docs/latest/use/configure/configuration-files)
+
 ```javascript
-// .eslintrc.js
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2022,
-    sourceType: 'module',
-    project: './tsconfig.json',
+// eslint.config.mjs
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
+
+export default tseslint.config(
+  // Base ESLint recommended rules
+  eslint.configs.recommended,
+
+  // TypeScript type-checked rules (requires tsconfig project reference)
+  ...tseslint.configs.recommendedTypeChecked,
+
+  // Prettier must be last to disable conflicting format rules
+  eslintConfigPrettier,
+
+  // Global settings
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
-  plugins: ['@typescript-eslint'],
-  extends: [
-    'eslint:recommended',
-    '@typescript-eslint/recommended',
-    '@typescript-eslint/recommended-requiring-type-checking',
-  ],
-  root: true,
-  env: {
-    node: true,
-    jest: true,
+
+  // Project rules
+  {
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/explicit-module-boundary-types': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      'prefer-const': 'error',
+      'no-var': 'error',
+    },
   },
-  rules: {
-    '@typescript-eslint/interface-name-prefix': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'warn',
-    '@typescript-eslint/explicit-module-boundary-types': 'warn',
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unused-vars': 'error',
-    '@typescript-eslint/prefer-nullish-coalescing': 'error',
-    '@typescript-eslint/prefer-optional-chain': 'error',
-    '@typescript-eslint/no-floating-promises': 'error',
-    '@typescript-eslint/await-thenable': 'error',
-    '@typescript-eslint/no-misused-promises': 'error',
-    'prefer-const': 'error',
-    'no-var': 'error',
+
+  // Ignore patterns (replaces legacy ignorePatterns)
+  {
+    ignores: ['dist/', 'node_modules/', '*.js'],
   },
-  ignorePatterns: [
-    'dist/',
-    'node_modules/',
-    '*.js',
-  ],
-};
+);
 ```
+
+> **Migrating from `.eslintrc.*`?** ESLint 10 dropped legacy config support entirely. Key changes: `extends` → spread arrays, `env` → `languageOptions.globals`, `plugins` → imported objects, `parser` → `languageOptions.parser` (handled automatically by `typescript-eslint`). The `typescript-eslint` package's `config()` helper provides type-safe composition. See [ESLint Migration Guide](https://eslint.org/docs/latest/use/configure/migration-guide).
 
 ### Prettier Configuration
 
@@ -1024,30 +1046,33 @@ module.exports = {
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix",
-    "format": "prettier --write src/**/*.ts",
-    "format:check": "prettier --check src/**/*.ts",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "type-check": "tsc --noEmit",
     "pre-commit": "lint-staged",
-    "prepare": "husky install",
-    "dev": "concurrently \"npm run build:watch\" \"npm run test:watch\"",
+    "prepare": "husky",
+    "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist coverage",
-    "start": "node dist/index.js",
-    "start:dev": "nodemon --exec \"npm run build && node dist/index.js\""
+    "start": "node dist/index.js"
   },
   "lint-staged": {
     "*.ts": [
       "prettier --write",
       "eslint --fix",
-      "jest --bail --findRelatedTests"
+      "vitest related --run"
     ]
   }
 }
 ```
+
+> **Note on ESLint glob patterns:** ESLint 10 resolves file patterns itself. Pass directories (`src/ tests/`) rather than shell globs (`src/**/*.ts`) to avoid shell expansion issues. See [ESLint CLI Reference](https://eslint.org/docs/latest/use/command-line-interface).
 
 ---
 
@@ -1055,33 +1080,40 @@ module.exports = {
 
 ### Husky Git Hooks
 
-```bash
-# Initialize husky hooks (package installed during setup)
-npm run prepare
+Husky 9+ uses a simplified setup. The `npx husky add` command was removed — hook files are plain shell scripts in `.husky/`.
 
-# Add pre-commit hook
-npx husky add .husky/pre-commit "npm run pre-commit"
+**Source:** [Husky Getting Started](https://typicode.github.io/husky/get-started.html)
+
+```bash
+# Initialize husky (creates .husky/ directory and sets up prepare script)
+npx husky init
+
+# The init command creates a sample pre-commit hook. Edit it:
+echo "npm run pre-commit" > .husky/pre-commit
 
 # Add pre-push hook
-npx husky add .husky/pre-push "npm run test:coverage && npm run type-check"
+echo "npm run test:coverage && npm run type-check" > .husky/pre-push
 ```
 
-### Nodemon Configuration
+### Development Server
 
-```json
-// nodemon.json
-{
-  "watch": ["src"],
-  "ext": "ts",
-  "ignore": ["src/**/*.test.ts"],
-  "exec": "npm run build && npm start",
-  "env": {
-    "NODE_ENV": "development"
-  }
-}
+Use `tsx` for fast TypeScript execution in development. It provides instant startup via esbuild-powered transformation, replacing the need for `nodemon` + `tsc` compilation.
+
+**Source:** [tsx GitHub](https://github.com/privatenumber/tsx)
+
+```bash
+# Watch mode (restarts on file changes)
+npx tsx watch src/index.ts
+
+# One-shot execution
+npx tsx src/index.ts
 ```
 
 ### GitHub Actions CI/CD
+
+Node.js 18 reached EOL in April 2025. CI matrices should target Node 20.x and 22.x. ESLint 10 requires Node.js v20.19.0+.
+
+**Source:** [Node.js Releases](https://nodejs.org/en/about/previous-releases)
 
 ```yaml
 # .github/workflows/ci.yml
@@ -1099,7 +1131,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x, 22.x]
 
     steps:
     - uses: actions/checkout@v4
@@ -1126,11 +1158,10 @@ jobs:
       run: npm run test:coverage
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage/lcov.info
         flags: unittests
-        name: codecov-umbrella
 
     - name: Build
       run: npm run build
@@ -1141,7 +1172,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: '22.x'
         cache: 'npm'
 
     - name: Install dependencies
@@ -1529,7 +1560,7 @@ export async function safeOperation<T>(
 
 - [ ] Node.js and npm installed
 - [ ] TypeScript project initialized
-- [ ] Configuration files set up (tsconfig, jest, eslint, prettier)
+- [ ] Configuration files set up (tsconfig, vitest.config.ts, eslint.config.mjs, .prettierrc)
 - [ ] Development dependencies installed
 - [ ] Git hooks configured
 - [ ] Todo list created with all tasks
@@ -1881,18 +1912,18 @@ npx tsc --declarationMap       # Generate declaration source maps
 ### Testing Commands
 
 ```bash
-# Jest specific
-npx jest                        # Run all tests
-npx jest --watch                # Watch mode
-npx jest --coverage            # With coverage
-npx jest --testNamePattern="test name"  # Run specific test
-npx jest --pathPattern="service"  # Run tests in path
-npx jest --updateSnapshot      # Update snapshots
+# Vitest
+npx vitest run                  # Run all tests
+npx vitest watch                # Watch mode
+npx vitest run --coverage       # With coverage
+npx vitest run -t "test name"   # Run specific test by name
+npx vitest run tests/unit/      # Run tests in directory
+npx vitest run --update         # Update snapshots
 
 # Debugging tests
-npx jest --runInBand           # Run tests serially
-npx jest --detectOpenHandles   # Detect open handles
-npx jest --forceExit           # Force exit after tests
+npx vitest run --pool=forks --poolOptions.forks.singleFork  # Run tests serially
+npx vitest run --reporter=verbose  # Verbose output
+npx vitest run --bail 1         # Stop after first failure
 ```
 
 ---
@@ -1929,20 +1960,20 @@ npx tsc --pretty --noEmit
 npx tsc src/**/*.ts --noEmit
 
 # Update types
-npm update @types/node @types/jest
+npm update @types/node
 ```
 
 ### Test Issues
 
 ```bash
 # Debug test compilation
-npx jest --no-cache --verbose
+npx vitest run --reporter=verbose
 
 # Check test configuration
-npx jest --showConfig
+npx vitest run --config vitest.config.ts --reporter=verbose 2>&1 | head -20
 
 # Run specific test with debugging
-node --inspect-brk node_modules/.bin/jest --runInBand test-file.test.ts
+node --inspect-brk node_modules/.bin/vitest run --pool=forks --poolOptions.forks.singleFork tests/unit/my-test.test.ts
 ```
 
 ### Build Performance Issues
