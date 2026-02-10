@@ -1,7 +1,7 @@
 # Rust Release Workflow - Confident Builds from Dev to Distribution
 
-**Version:** 1.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** A production-minded workflow for Rust services and CLIs that harmonizes with your SQL-first database process and multi-language ecosystem.
 
 ---

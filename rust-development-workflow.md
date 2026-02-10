@@ -1,7 +1,7 @@
 # Rust Development Workflow - TDD Best Practices
 
-**Version:** 1.0
-**Last Updated:** 2025-10-17
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** Stellar workflow for Rust development with comprehensive test coverage, safety guarantees, and performance optimization
 
 ---
@@ -823,13 +823,15 @@ fn test_memory_patterns() {
 
 ### Cargo Configuration
 
+> **Rust 2024 Edition (Rust 1.85.0, February 2025):** `std::env::set_var` and `std::env::remove_var` are now `unsafe` in edition 2024 due to thread-safety concerns. Run `cargo fix --edition` to auto-migrate. See [Rust Edition Guide](https://doc.rust-lang.org/edition-guide/rust-2024/newly-unsafe-functions.html).
+
 ```toml
 # Cargo.toml
 [package]
 name = "projectname"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.70"
+edition = "2024"
+rust-version = "1.85"  # Minimum for edition 2024
 authors = ["Your Name <your.email@example.com>"]
 description = "A brief description"
 license = "MIT OR Apache-2.0"
@@ -840,7 +842,7 @@ categories = ["command-line-utilities"]
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
-thiserror = "1.0"
+thiserror = "2.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
@@ -887,7 +889,7 @@ resolver = "2"
 [workspace.dependencies]
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
-thiserror = "1.0"
+thiserror = "2.0"
 tracing = "0.1"
 
 [workspace.dev-dependencies]

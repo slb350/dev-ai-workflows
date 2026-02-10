@@ -1,7 +1,7 @@
 # Python Development Workflow - TDD Best Practices
 
-**Version:** 1.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** Stellar workflow for Python development with comprehensive test coverage
 
 ---
@@ -409,6 +409,8 @@ testpaths = ["tests"]
 See: [pytest good practices](https://docs.pytest.org/en/stable/explanation/goodpractices.html)
 
 ### Ruff Configuration: Avoiding Formatter/Linter Conflicts
+
+> **Ruff 0.15.0 (February 2026):** Introduces the 2026 style guide with formatting changes (lambda parenthesization, match statement formatting, markdown code block support). Code may reformat after upgrading. See [ruff 0.15.0 blog post](https://astral.sh/blog/ruff-v0.15.0).
 
 When using `ruff format` alongside `ruff check`, certain lint rules conflict with the formatter. The official Ruff documentation recommends disabling these rules.
 

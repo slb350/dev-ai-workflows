@@ -1,7 +1,7 @@
 # Schema Documentation Workflow - Keep Data Models Understandable
 
-**Version:** 1.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** Lightweight, language-agnostic practices for documenting PostgreSQL and SQLite schemas so every service (Python, Go, Rust, TypeScript) shares the same understanding of the database.
 
 ---

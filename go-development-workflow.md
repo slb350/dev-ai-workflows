@@ -1,7 +1,7 @@
 # Go Development Workflow - TDD Best Practices
 
-**Version:** 1.0
-**Last Updated:** 2025-10-17
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** Stellar workflow for Go development with comprehensive test coverage and idiomatic Go practices
 
 ---
@@ -33,14 +33,15 @@ This workflow prioritizes **quality**, **performance**, and **maintainability** 
 go mod init github.com/username/projectname
 
 # 2. Install development tools
-# golangci-lint: Use binary installation (recommended by golangci-lint team)
+# golangci-lint v2: Use binary installation (recommended by golangci-lint team)
 # See: https://golangci-lint.run/welcome/install/#local-installation
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+# NOTE: Do NOT use `go install` for golangci-lint — it's explicitly discouraged.
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.8.0
 
 # Other Go tools: Use go install with pinned versions
-go install golang.org/x/tools/cmd/goimports@v0.20.0
-go install github.com/air-verse/air@v1.52.0  # Optional hot reload
-go install github.com/golang/mock/mockgen@v1.6.0
+go install golang.org/x/tools/cmd/goimports@latest
+go install github.com/air-verse/air@latest  # Optional hot reload
+go install go.uber.org/mock/mockgen@latest   # uber fork replaces golang/mock
 
 # 3. Verify environment
 go version
@@ -62,10 +63,10 @@ alias bootstrap := tools
 
 # Install all development tools
 tools:
-	@echo "Installing golangci-lint (binary)..."
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+	@echo "Installing golangci-lint v2 (binary)..."
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.8.0
 	@echo "Installing goimports..."
-	@go install golang.org/x/tools/cmd/goimports@v0.20.0
+	@go install golang.org/x/tools/cmd/goimports@latest
 	@echo "Installing air (hot reload)..."
 	@go install github.com/air-verse/air@v1.52.0
 	@echo "Installing mockgen..."
@@ -258,8 +259,9 @@ go test ./pkgname -v
 #### Step 3: REFACTOR - Clean & Format
 
 ```bash
-# Format code (goimports handles both formatting and imports)
-goimports -w .
+# Format code (golangci-lint v2 includes a `fmt` command for configured formatters)
+golangci-lint fmt
+# Or manually: goimports -w .
 
 # Lint and auto-fix
 golangci-lint run --fix
@@ -670,11 +672,11 @@ check: fmt vet lint test
 ### Development Tools
 
 ```bash
-# Install essential tools (respect the versions from tools.go)
-go install github.com/golang/mock/mockgen@v1.6.0
-go install github.com/air-verse/air@v1.49.0
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.1
-go install golang.org/x/tools/cmd/goimports@v0.20.0
+# Install essential tools
+go install go.uber.org/mock/mockgen@latest    # uber fork replaces golang/mock
+go install github.com/air-verse/air@latest
+# NOTE: Install golangci-lint via binary (see Phase 1 setup), not `go install`
+go install golang.org/x/tools/cmd/goimports@latest
 
 # Air configuration for hot reload
 cat > .air.toml << 'EOF'
@@ -792,23 +794,20 @@ golangci-lint run --fix
 
 ### golangci-lint Configuration
 
+> **golangci-lint v2 (March 2025):** The configuration format changed significantly. Use `golangci-lint migrate` to convert v1 configs. See [migration guide](https://golangci-lint.run/docs/product/migration-guide/). Key changes: `linters-settings` → `linters.settings`, formatters moved to `formatters` section, `gosimple`/`staticcheck`/`stylecheck` merged into `staticcheck`, `run.timeout` removed (no timeout by default), `typecheck` is not a linter (remove it).
+
 ```yaml
-# .golangci.yml
+# .golangci.yml (v2 format)
 run:
   tests: true
-  timeout: 5m
 
 linters:
   enable:
-    - gofmt
-    - goimports
     - govet
     - errcheck
-    - staticcheck
+    - staticcheck  # includes gosimple and stylecheck
     - unused
-    - gosimple
     - ineffassign
-    - typecheck
     - revive
     - gosec
     - misspell
@@ -818,17 +817,22 @@ linters:
     - gocyclo
     - gochecknoinits
     - gocritic
+  settings:
+    gocyclo:
+      min-complexity: 10
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    govet:
+      enable:
+        - shadow
+    misspell:
+      locale: US
 
-linters-settings:
-  gocyclo:
-    min-complexity: 10
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  govet:
-    check-shadowing: true
-  misspell:
-    locale: US
+formatters:
+  enable:
+    - gofmt
+    - goimports
 ```
 
 ### Interface Design
@@ -1063,7 +1067,8 @@ go build -o bin/app ./cmd/server        # Build executable
 go install ./cmd/server                 # Install to GOBIN
 
 # Code quality
-goimports -w .                         # Format code and imports
+golangci-lint fmt                      # Format code (v2: runs configured formatters)
+goimports -w .                         # Format code and imports (alternative)
 go vet ./...                           # Static analysis
 golangci-lint run                      # Comprehensive linting
 

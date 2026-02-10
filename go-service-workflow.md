@@ -1,7 +1,7 @@
 # Go Service Workflow - Fast, Typed, Portable
 
-**Version:** 1.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** Codify a Go service workflow that leans on Go’s tooling while staying in lockstep with your PostgreSQL/SQLite database artifacts and multi-language environment.
 
 ---
@@ -35,9 +35,9 @@ This workflow is tuned for Go 1.22+, making it easy to build side projects that 
 
 | Category | Tool | Notes |
 | --- | --- | --- |
-| Go runtime | Go 1.22+ (via `asdf`, `goup`, or `brew install go`) | Keep local version pinned in `.tool-versions` if using `asdf`. |
+| Go runtime | Go 1.24+ (via `asdf`, `goup`, or `brew install go`) | Keep local version pinned in `.tool-versions` if using `asdf`. |
 | Formatting | `gofmt`, `gofumpt`, `goimports` | Prefer `gofumpt` for stricter style. |
-| Linting | `golangci-lint` (v1.58+) | Configure with curated linters. |
+| Linting | `golangci-lint` (v2.8+) | Config format changed in v2. Use `golangci-lint migrate` to convert. See [migration guide](https://golangci-lint.run/docs/product/migration-guide/). |
 | Testing | `go test`, `go test -race`, `go test -bench`, `go test -fuzz` | Run with `-count=1` to avoid caching when needed. |
 | Dependency updates | `renovate`, `go get -u`, `govulncheck` | Keep `go.sum` tidy. |
 | Database integration | Shell/just scripts executing Sqitch/pgTAP/tapsqlite before `go test` | Keep DB under shared contract. |
@@ -46,7 +46,9 @@ This workflow is tuned for Go 1.22+, making it easy to build side projects that 
 Install base tools (macOS example):
 
 ```bash
-brew install go golangci-lint gofumpt just
+brew install go gofumpt just
+# golangci-lint v2: Use binary installation (not brew, not go install)
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.8.0
 go install golang.org/x/tools/cmd/goimports@latest
 go install golang.org/x/vuln/cmd/govulncheck@latest
 ```
@@ -395,7 +397,7 @@ docs/
 
 | Issue | Fix |
 | --- | --- |
-| Lint noise | Tune `.golangci.yml` (disable unused linters). |
+| Lint noise | Tune `.golangci.yml` (v2 format). Run `golangci-lint migrate` to convert v1 configs. |
 | Module mismatch | `go mod tidy` + `go mod verify`. |
 | Race detector fails | Inspect data races, use mutex/context values. |
 | Binary too large | Pass `-ldflags="-s -w"` and compress with `upx` if acceptable. |

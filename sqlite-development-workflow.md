@@ -1,7 +1,7 @@
 # SQLite Development Workflow – TDD Best Practices (Language Agnostic)
 
-**Version:** 2.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** A repeatable, language-neutral workflow for building, testing, and operating SQLite databases with confidence.
 
 ---

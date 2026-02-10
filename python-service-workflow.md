@@ -1,7 +1,7 @@
 # Python Service Workflow - Batteries-Included TDD
 
-**Version:** 1.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** Opinionated workflow for building small-to-medium Python services with strong testing, formatting, and portable packaging that pairs cleanly with the PostgreSQL/SQLite database workflows.
 
 ---

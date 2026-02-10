@@ -1,7 +1,7 @@
 # PostgreSQL Development Workflow - TDD Best Practices
 
-**Version:** 2.0  
-**Last Updated:** 2025-10-17  
+**Version:** 2.1
+**Last Updated:** 2026-02-09
 **Purpose:** End-to-end workflow for building and maintaining PostgreSQL schemas with confidence, regardless of application language or framework.
 
 ---
@@ -92,7 +92,7 @@ postgres-project/
 version: "3.9"
 services:
   postgres:
-    image: postgres:16
+    image: postgres:17
     container_name: postgres_dev
     ports:
       - "5432:5432"
