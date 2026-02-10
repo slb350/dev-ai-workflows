@@ -2,6 +2,27 @@
 
 A comprehensive collection of language-agnostic and language-specific development workflow guides. These playbooks standardize development practices across projects, ensuring consistent code quality, testing, and deployment patterns.
 
+## Last Updated: February 2026
+
+All 16 workflows were comprehensively reviewed and updated in February 2026, validated against official documentation using Ref MCP and peer-reviewed by both Codex and Gemini.
+
+### Key Tool Versions
+
+| Tool | Version | Notable Changes |
+| ---- | ------- | -------------- |
+| ESLint | 10.0 | Flat config only (`eslint.config.mjs`), legacy `.eslintrc` removed |
+| Vitest | 4.x | `coverage.all` → `coverage.include`, `maxWorkers` replaces `maxThreads` |
+| pnpm | 10 | Lifecycle scripts blocked by default, nothing hoisted by default |
+| Node.js | 22 LTS | Minimum for TypeScript workflows |
+| TypeScript | 5.9 | `import.meta.dirname`, `module: "node20"` |
+| golangci-lint | v2.8.0 | Complete config restructure from v1 (`linters.settings`, `formatters` section) |
+| Rust | edition 2024 | `std::env::set_var`/`remove_var` now unsafe, thiserror 2.0 |
+| ruff | 0.15.0 | 2026 style guide (lambda parenthesization, match formatting) |
+| pytest-asyncio | 1.0 | `event_loop` fixture removed |
+| PostgreSQL | 17 | Docker images updated from 16 |
+| Prometheus | 3.5.1 LTS | Native OTLP ingestion, new UI, Remote Write 2.0 |
+| Grafana Agent | EOL Nov 2025 | Replaced by **Grafana Alloy** |
+
 ## Why This Repository Exists
 
 **Problem:** Starting new projects or features often means reinventing the development process—deciding on tools, test frameworks, formatting standards, database migration strategies, and commit practices. This wastes time and leads to inconsistent practices across projects.
@@ -58,10 +79,10 @@ This repository contains workflow guides that can be mixed and matched based on 
 
 Core TDD, linting, formatting, and commit practices for each language:
 
-- **[Python Development Workflow](python-development-workflow.md)** - pytest, black, ruff, uv
-- **[Go Development Workflow](go-development-workflow.md)** - Idiomatic Go, race detection, gofmt
-- **[Rust Development Workflow](rust-development-workflow.md)** - Cargo, fmt, clippy
-- **[TypeScript Development Workflow](typescript-development-workflow.md)** - ESM, pnpm, vitest
+- **[Python Development Workflow](python-development-workflow.md)** - pytest, ruff (format + lint), uv
+- **[Go Development Workflow](go-development-workflow.md)** - Idiomatic Go, race detection, golangci-lint v2
+- **[Rust Development Workflow](rust-development-workflow.md)** - Cargo, fmt, clippy, edition 2024
+- **[TypeScript Development Workflow](typescript-development-workflow.md)** - ESM, pnpm 10, Vitest 4, ESLint 10 flat config, Node 22
 - **[GraphQL Development Workflow](graphql-development-workflow.md)** - Schema-first design, type generation, resolvers (TypeScript/Apollo Server, Python/Strawberry)
 
 ### Service & Release Workflows
@@ -84,8 +105,8 @@ SQL-first migrations, testing, and performance practices:
 
 Cross-cutting concerns for all projects:
 
-- **[Local Infrastructure Workflow](local-infra-workflow.md)** - Docker Compose for databases and observability
-- **[Observability Workflow](observability-workflow.md)** - Structured logging, metrics, tracing, Grafana
+- **[Local Infrastructure Workflow](local-infra-workflow.md)** - Docker Compose for PostgreSQL 17, Prometheus 3.x, Grafana 12, Loki, Tempo
+- **[Observability Workflow](observability-workflow.md)** - Structured logging, metrics, tracing, Grafana Alloy (replaces deprecated Agent)
 - **[Schema Documentation Workflow](schema-docs-workflow.md)** - ERDs, markdown docs, schema diffs
 
 ### Boilerplates & Starter Templates
@@ -196,7 +217,7 @@ Determine which components your project needs:
 Based on your stack, choose workflows:
 
 | Stack | Workflows to Read |
-|-------|------------------|
+| ----- | ---------------- |
 | **FastAPI + GraphQL + SQLite** | **[See Boilerplate](fastapi-graphql-boilerplate.md)** - Complete starter template with Python, Strawberry GraphQL, SQLite |
 | **Python API + PostgreSQL** | Python Development + Python Service + PostgreSQL + Observability + Local Infra + Schema Docs |
 | **GraphQL API (TypeScript)** | TypeScript Development + GraphQL Development (Apollo Server) + PostgreSQL + Observability |
@@ -469,7 +490,7 @@ just lint
 
 6. **Reference during code reviews** to ensure consistency
 
-### For AI Assistants (Claude Code, Codex, etc.)
+### For AI Assistants — Getting Started
 
 When a user asks you to start a new project or feature:
 
@@ -536,4 +557,6 @@ When updating workflows:
 - Follow the commit message format above
 - Update related workflows if changes affect multiple guides
 - Note breaking changes in commit messages
-- Keep workflows focused on practices, not tool versions
+- Validate changes against official documentation (use Ref MCP where available)
+- Peer-review updates with multiple AI reviewers (Codex + Gemini) when possible
+- Update the version table in this README when tool versions change
