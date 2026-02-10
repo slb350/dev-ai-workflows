@@ -62,7 +62,7 @@ Core TDD, linting, formatting, and commit practices for each language:
 - **[Go Development Workflow](go-development-workflow.md)** - Idiomatic Go, race detection, gofmt
 - **[Rust Development Workflow](rust-development-workflow.md)** - Cargo, fmt, clippy
 - **[TypeScript Development Workflow](typescript-development-workflow.md)** - ESM, pnpm, vitest
-- **[GraphQL Development Workflow](graphql-development-workflow.md)** - Schema-first, Apollo Server, type generation, resolvers
+- **[GraphQL Development Workflow](graphql-development-workflow.md)** - Schema-first design, type generation, resolvers (TypeScript/Apollo Server, Python/Strawberry)
 
 ### Service & Release Workflows
 
@@ -197,9 +197,10 @@ Based on your stack, choose workflows:
 
 | Stack | Workflows to Read |
 |-------|------------------|
-| **FastAPI + GraphQL + SQLite** | **[See Boilerplate](fastapi-graphql-boilerplate.md)** - Complete starter template |
+| **FastAPI + GraphQL + SQLite** | **[See Boilerplate](fastapi-graphql-boilerplate.md)** - Complete starter template with Python, Strawberry GraphQL, SQLite |
 | **Python API + PostgreSQL** | Python Development + Python Service + PostgreSQL + Observability + Local Infra + Schema Docs |
-| **GraphQL API (TypeScript)** | TypeScript Development + GraphQL Development + PostgreSQL + Observability |
+| **GraphQL API (TypeScript)** | TypeScript Development + GraphQL Development (Apollo Server) + PostgreSQL + Observability |
+| **GraphQL API (Python/Strawberry)** | Python Development + GraphQL Development (Strawberry) + SQLite + Observability |
 | **Rust CLI + SQLite** | Rust Development + Rust Release + SQLite |
 | **Go Microservice + PostgreSQL** | Go Development + Go Service + PostgreSQL + Observability + Local Infra + Schema Docs |
 | **TypeScript App + SQLite** | TypeScript Development + TypeScript Service + SQLite + Observability + Local Infra |
@@ -271,6 +272,20 @@ just lint  # or make lint
 ```
 
 ## Example Workflow Combinations
+
+### FastAPI + GraphQL + SQLite (Boilerplate Available!)
+
+**Quick Start:** Use the [FastAPI + GraphQL + SQLite Boilerplate](fastapi-graphql-boilerplate.md) for a complete, ready-to-use template.
+
+```text
+1. fastapi-graphql-boilerplate.md (complete template)
+   OR follow these workflows individually:
+   a. python-development-workflow.md
+   b. graphql-development-workflow.md (Strawberry variant)
+   c. sqlite-development-workflow.md
+   d. observability-workflow.md
+   e. schema-docs-workflow.md
+```
 
 ### Python API with PostgreSQL
 

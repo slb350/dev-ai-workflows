@@ -70,7 +70,7 @@ tools:
 	@echo "Installing air (hot reload)..."
 	@go install github.com/air-verse/air@v1.52.0
 	@echo "Installing mockgen..."
-	@go install github.com/golang/mock/mockgen@v1.6.0
+	@go install go.uber.org/mock/mockgen@latest
 	@echo "All tools installed successfully!"
 ```
 

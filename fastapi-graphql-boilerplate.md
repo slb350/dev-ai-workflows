@@ -1152,7 +1152,7 @@ async def get_user(user_id: int, user_service: UserService = Depends(get_user_se
 
 # GraphQL resolver (uses same service)
 @strawberry.field
-async def user(info, id: int) -> Optional[User]:
+async def user(info, id: int) -> User | None:
     user_service: UserService = info.context["user_service"]
     return await user_service.get_user_by_id(id)
 ```
