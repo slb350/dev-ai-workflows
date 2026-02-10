@@ -1,7 +1,7 @@
 # GraphQL Development Workflow - Schema-First API Design
 
-**Version:** 1.0
-**Last Updated:** 2025-01-24
+**Version:** 2.0
+**Last Updated:** 2026-02-09
 **Purpose:** Comprehensive workflow for building type-safe, tested GraphQL APIs with TypeScript
 
 ---
@@ -36,6 +36,7 @@ npm pkg set type="module"
 
 # 2. Install core dependencies
 npm install graphql @apollo/server graphql-tag
+# Note: @apollo/server v5 requires Node.js v20+ and graphql v16.11.0+
 
 # 3. Install TypeScript and development tools
 npm install -D typescript @types/node tsx
@@ -46,7 +47,7 @@ npm install -D @graphql-typed-document-node/core
 npm install -D vitest @vitest/coverage-v8 @graphql-tools/mock @graphql-tools/schema
 
 # 5. Install code quality tools
-npm install -D prettier eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
+npm install -D prettier eslint @eslint/js typescript-eslint eslint-config-prettier
 
 # 6. Initialize TypeScript
 npx tsc --init
@@ -103,6 +104,8 @@ graphql-api/
 ├── codegen.ts                    # GraphQL Code Generator config
 ├── tsconfig.json
 ├── vitest.config.ts
+├── eslint.config.mjs
+├── .prettierrc
 ├── justfile
 └── package.json
 ```
@@ -993,6 +996,7 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       provider: 'v8',
+      include: ['src/**/*.ts'],
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',
@@ -1031,21 +1035,36 @@ export default defineConfig({
 
 ### ESLint Configuration
 
+ESLint 10 uses flat config exclusively. See the [TypeScript Development Workflow](typescript-development-workflow.md) for full ESLint flat config details.
+
 ```javascript
-// eslint.config.js
+// eslint.config.mjs
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
 export default tseslint.config(
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  eslintConfigPrettier,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
     },
-  }
+  },
+  {
+    ignores: ['dist/', 'node_modules/', 'generated/'],
+  },
 );
 ```
 
@@ -1430,6 +1449,8 @@ export const userResolvers: Resolvers = {
 
 ## Server Setup
 
+> **Apollo Server 5:** The `startStandaloneServer` function no longer uses Express under the hood — it's built directly on Node's HTTP server. The API is unchanged. If you relied on Express-specific behavior, [swap to `expressMiddleware`](https://www.apollographql.com/docs/apollo-server/api/standalone#swapping-to-expressmiddleware). See [Apollo Server 5 migration guide](https://www.apollographql.com/docs/apollo-server/migration/).
+
 ```typescript
 // src/server.ts
 import { ApolloServer } from '@apollo/server';
@@ -1440,18 +1461,11 @@ import { resolvers } from './schema/resolvers';
 import { createContext } from './context';
 
 // Load all schema files
-const userTypeDefs = readFileSync(
-  join(__dirname, 'schema/typeDefs/user.graphql'),
-  'utf-8'
-);
-const postTypeDefs = readFileSync(
-  join(__dirname, 'schema/typeDefs/post.graphql'),
-  'utf-8'
-);
-const commonTypeDefs = readFileSync(
-  join(__dirname, 'schema/typeDefs/common.graphql'),
-  'utf-8'
-);
+// import.meta.dirname available since Node 20.11 (ESM replacement for __dirname)
+const schemaDir = join(import.meta.dirname, 'schema/typeDefs');
+const userTypeDefs = readFileSync(join(schemaDir, 'user.graphql'), 'utf-8');
+const postTypeDefs = readFileSync(join(schemaDir, 'post.graphql'), 'utf-8');
+const commonTypeDefs = readFileSync(join(schemaDir, 'common.graphql'), 'utf-8');
 
 const typeDefs = [userTypeDefs, postTypeDefs, commonTypeDefs];
 

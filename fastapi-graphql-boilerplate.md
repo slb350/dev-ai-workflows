@@ -1,7 +1,7 @@
 # FastAPI + GraphQL + SQLite Boilerplate
 
-**Version:** 1.0
-**Last Updated:** 2025-01-24
+**Version:** 2.0
+**Last Updated:** 2026-02-09
 **Purpose:** Complete boilerplate for building modern Python APIs with FastAPI, GraphQL, SQLite, and comprehensive documentation
 
 ---
@@ -263,7 +263,6 @@ Follow: **[GraphQL Development Workflow](graphql-development-workflow.md)**
 # src/api/graphql/types.py
 import strawberry
 from datetime import datetime
-from typing import Optional
 
 @strawberry.type
 class User:
@@ -293,20 +292,19 @@ class CreateUserPayload:
 ```python
 # src/api/graphql/queries.py
 import strawberry
-from typing import Optional, List
 from .types import User
 from ..services.user_service import UserService
 
 @strawberry.type
 class Query:
     @strawberry.field
-    async def user(self, info, id: int) -> Optional[User]:
+    async def user(self, info, id: int) -> User | None:
         """Get user by ID."""
         user_service: UserService = info.context["user_service"]
         return await user_service.get_user_by_id(id)
 
     @strawberry.field
-    async def users(self, info) -> List[User]:
+    async def users(self, info) -> list[User]:
         """Get all users."""
         user_service: UserService = info.context["user_service"]
         return await user_service.get_all_users()
@@ -357,7 +355,6 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 ```python
 # src/api/services/user_service.py
-from typing import Optional, List
 from ..repositories.user_repository import UserRepository
 from ..models.user import User
 from ..core.security import hash_password
@@ -368,11 +365,11 @@ class UserService:
     def __init__(self, user_repository: UserRepository):
         self.user_repo = user_repository
 
-    async def get_user_by_id(self, user_id: int) -> Optional[User]:
+    async def get_user_by_id(self, user_id: int) -> User | None:
         """Get user by ID."""
         return await self.user_repo.get_by_id(user_id)
 
-    async def get_all_users(self) -> List[User]:
+    async def get_all_users(self) -> list[User]:
         """Get all users."""
         return await self.user_repo.get_all()
 
@@ -405,7 +402,6 @@ class UserService:
 
 ```python
 # src/api/repositories/user_repository.py
-from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from ..models.user import User
@@ -416,28 +412,28 @@ class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, user_id: int) -> Optional[User]:
+    async def get_by_id(self, user_id: int) -> User | None:
         """Get user by ID."""
         result = await self.session.execute(
             select(User).where(User.id == user_id)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[User]:
+    async def get_by_email(self, email: str) -> User | None:
         """Get user by email."""
         result = await self.session.execute(
             select(User).where(User.email == email)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_username(self, username: str) -> Optional[User]:
+    async def get_by_username(self, username: str) -> User | None:
         """Get user by username."""
         result = await self.session.execute(
             select(User).where(User.username == username)
         )
         return result.scalar_one_or_none()
 
-    async def get_all(self) -> List[User]:
+    async def get_all(self) -> list[User]:
         """Get all users."""
         result = await self.session.execute(select(User))
         return list(result.scalars().all())
@@ -523,7 +519,7 @@ if __name__ == "__main__":
 
 ```python
 # src/api/graphql/context.py
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.database import get_session
 from ..services.user_service import UserService
@@ -561,7 +557,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
 )
 from sqlalchemy.orm import DeclarativeBase
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from ..config import settings
 
@@ -847,17 +843,17 @@ dependencies = [
 
 [project.optional-dependencies]
 testing = [
-    "pytest>=7.4.4",
-    "pytest-asyncio>=0.23.3",
-    "pytest-cov>=4.1.0",
-    "httpx>=0.26.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=1.0",
+    "pytest-cov>=6.0",
+    "httpx>=0.28",
 ]
 typing = [
-    "mypy>=1.8.0",
+    "mypy>=1.14",
     "types-passlib>=1.7.7",
 ]
 dev = [
-    "ruff>=0.1.14",
+    "ruff>=0.9",
     "pytest-watch>=4.2.0",
 ]
 
@@ -873,6 +869,7 @@ python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
     "--strict-config",
+    "--import-mode=importlib",
     "-ra",
 ]
 asyncio_mode = "auto"
@@ -916,6 +913,11 @@ select = [
 ignore = [
     "E501",  # line too long (handled by formatter)
     "B008",  # function calls in argument defaults (FastAPI Depends)
+    # Rules that conflict with ruff format (per official docs):
+    # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "W191", "E111", "E114", "E117", "D206", "D300",
+    "Q000", "Q001", "Q002", "Q003",
+    "COM812", "COM819", "ISC001", "ISC002",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -983,17 +985,13 @@ tests/
 ```python
 # tests/conftest.py
 import pytest
-import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.api.models.base import Base
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# Note: The manual event_loop fixture override was removed in pytest-asyncio 1.0.
+# Use loop_scope parameter on fixtures or asyncio_default_fixture_loop_scope in
+# pyproject.toml to control event loop scope.
 
 @pytest.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
