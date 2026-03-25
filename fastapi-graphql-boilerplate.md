@@ -1,7 +1,7 @@
 # FastAPI + GraphQL + SQLite Boilerplate
 
-**Version:** 2.0
-**Last Updated:** 2026-02-09
+**Version:** 2.1
+**Last Updated:** 2026-03-25
 **Purpose:** Complete boilerplate for building modern Python APIs with FastAPI, GraphQL, SQLite, and comprehensive documentation
 
 ---
@@ -65,6 +65,7 @@ This boilerplate follows these workflows in combination:
 | **Schema Docs** | [Schema Documentation Workflow](schema-docs-workflow.md) | ERDs, database documentation |
 | **UI/Design** | [Style Guide](style-guide.md) | Design system (if building frontend) |
 | **Observability** | [Observability Workflow](observability-workflow.md) | Logging, metrics, tracing |
+| **HTTP Client** | [Python HTTP Client Guide](python-http-client-guide.md) | niquests for production HTTP, httpx for ASGI testing only |
 
 **Key Principle:** Each layer follows its workflow independently. This document shows the integration points.
 
@@ -168,7 +169,7 @@ mkdir fastapi-graphql-api && cd fastapi-graphql-api
 uv init --lib
 uv add fastapi uvicorn strawberry-graphql sqlalchemy
 
-# Add development dependencies
+# Add development dependencies (httpx retained for ASGITransport integration tests only)
 uv add --dev pytest pytest-asyncio pytest-cov httpx ruff mypy
 
 # Create structure
@@ -846,7 +847,7 @@ testing = [
     "pytest>=8.0",
     "pytest-asyncio>=1.0",
     "pytest-cov>=6.0",
-    "httpx>=0.28",
+    "httpx>=0.28",    # retained for ASGITransport integration tests only — see python-http-client-guide.md
 ]
 typing = [
     "mypy>=1.14",
@@ -1061,14 +1062,17 @@ async def test_create_user_duplicate_email(db_session):
 
 ```python
 # tests/integration/test_graphql_integration.py
+# NOTE: httpx is used here solely for ASGITransport — the only way to test
+# FastAPI apps in-process with async. For outbound HTTP calls in production
+# code, use niquests instead. See: python-http-client-guide.md
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from src.api.main import app
 
 @pytest.mark.asyncio
 async def test_create_user_mutation():
     """Test creating a user via GraphQL."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         mutation = """
             mutation CreateUser($input: CreateUserInput!) {
                 createUser(input: $input) {
@@ -1105,7 +1109,7 @@ async def test_create_user_mutation():
 @pytest.mark.asyncio
 async def test_query_user():
     """Test querying a user via GraphQL."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # First create a user
         # ... (create user mutation)
 
@@ -1462,6 +1466,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 - **[SQLite Development Workflow](sqlite-development-workflow.md)** - Migrations, testing
 - **[Schema Documentation Workflow](schema-docs-workflow.md)** - Database documentation
 - **[Observability Workflow](observability-workflow.md)** - Logging, metrics, tracing
+- **[Python HTTP Client Guide](python-http-client-guide.md)** - niquests for production HTTP, httpx for ASGI testing only
 - **[Style Guide](style-guide.md)** - Frontend design system
 
 ---

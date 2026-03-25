@@ -1,7 +1,7 @@
 # Python Service Workflow - Batteries-Included TDD
 
-**Version:** 2.1
-**Last Updated:** 2026-02-09
+**Version:** 2.2
+**Last Updated:** 2026-03-25
 **Purpose:** Opinionated workflow for building small-to-medium Python services with strong testing, formatting, and portable packaging that pairs cleanly with the PostgreSQL/SQLite database workflows.
 
 ---
@@ -42,6 +42,7 @@ This playbook is tuned for side projects and prototypes that still deserve real 
 | Packaging | `uv build`, `uv publish` or Docker multi-stage | Choose per deployment target. |
 | Database integration | `just` or shell scripts running Sqitch/tapsqlite suites | Keeps schema contract in sync. |
 | Observability | `structlog`, `rich`, `sentry-sdk` optional | Mirror Observability workflow. |
+| HTTP client | `niquests` (production), `httpx` (ASGI testing only) | See [Python HTTP Client Guide](python-http-client-guide.md). |
 
 Install base tooling (macOS example):
 
@@ -79,7 +80,7 @@ description = "Example service"
 requires-python = ">=3.12"
 dependencies = [
   "pydantic>=2.8",
-  "httpx>=0.27",
+  "niquests>=3.18",
   "structlog>=24.2",
   "psycopg[binary]>=3.2",
   "sqlite-utils>=3.36",
@@ -312,7 +313,7 @@ def sqlite_db(tmp_path_factory):
         conn.close()
 ```
 
-1. For async frameworks (FastAPI/Starlette), use `pytest-asyncio` with `anyio` or `httpx.AsyncClient`.  
+1. For async frameworks (FastAPI/Starlette), use `pytest-asyncio` with `anyio`. For ASGI integration tests, use `httpx.AsyncClient` with `ASGITransport` (httpx as a dev-only dependency). For outbound HTTP calls in production code, use `niquests.AsyncSession`. See [Python HTTP Client Guide](python-http-client-guide.md) for the full rationale and migration patterns.
 1. Keep ORM usage minimal; prefer raw SQL or lightweight query builders when schema lives in shared SQL migrations.
 
 ---
